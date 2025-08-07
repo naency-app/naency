@@ -8,30 +8,32 @@ import { z } from "zod"
 import { FormField, FormLabel, FormItem, FormControl, FormMessage, Form } from "./ui/form"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { signIn } from "@/server/user"
+import { signUp } from "@/server/user"
 import { toast } from "sonner"
 import { useState } from "react"
 import { authClient } from "@/lib/auth-client"
 import { GoogleIcon } from "./icons"
 import Link from "next/link"
 
-const loginSchema = z.object({
+const signupSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
 })
 
-export function LoginForm({
+export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<z.infer<typeof signupSchema>>({
+    resolver: zodResolver(signupSchema),
     defaultValues: {
       email: "",
       password: "",
+      name: "",
     },
   })
 
@@ -42,28 +44,28 @@ export function LoginForm({
         provider: "google",
         callbackURL: "/dashboard",
       })
+      toast.success("Sign up successful")
       router.push("/dashboard")
-      toast.success("Login successful")
     } catch (error) {
-      console.error("Google login error:", error)
-      toast.error("Failed to login with Google")
+      console.error("Google sign up error:", error)
+      toast.error("Failed to sign up with Google")
     } finally {
       setIsLoading(false)
     }
   }
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
-    console.log("Login form submitted with values:", values)
+  async function onSubmit(values: z.infer<typeof signupSchema>) {
+    console.log("Signup form submitted with values:", values)
 
     try {
       setIsLoading(true)
-      console.log("Attempting to sign in:", { email: values.email })
-      await signIn(values.email, values.password)
-      toast.success("Login successful")
+      console.log("Attempting to sign up:", { email: values.email, name: values.name })
+      await signUp(values.email, values.password, values.name)
+      toast.success("Account created successfully")
       router.push("/dashboard")
     } catch (error) {
       console.error("Authentication error:", error)
-      toast.error("Invalid email or password. Please check your credentials.")
+      toast.error("Failed to create account. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -84,14 +86,35 @@ export function LoginForm({
         >
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-2xl font-bold">
-              Login to your account
+              Create your account
             </h1>
             <p className="text-muted-foreground text-sm text-balance">
-              Enter your email below to login to your account
+              Enter your details below to create your account
             </p>
           </div>
 
           <div className="grid gap-6">
+            <div className="grid gap-3">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="John Doe"
+                        {...field}
+                        type="text"
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <div className="grid gap-3">
               <FormField
                 control={form.control}
@@ -137,10 +160,10 @@ export function LoginForm({
             <Button
               type="submit"
               className="w-full"
-              loading={form.formState.isSubmitting}
+              loading={isLoading || form.formState.isSubmitting}
               disabled={isLoading}
             >
-              Login
+              Sign up
             </Button>
 
             <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
@@ -158,18 +181,18 @@ export function LoginForm({
               disabled={isLoading}
             >
               <GoogleIcon className="size-4" />
-              Login with Google
+              Sign up with Google
             </Button>
           </div>
 
           <div className="text-center text-sm">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary hover:underline">
+              Login
             </Link>
           </div>
         </form>
       </Form>
     </>
   )
-}
+} 
