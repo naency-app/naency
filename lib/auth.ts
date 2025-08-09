@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db/drizzle";
 import * as schema from "@/db/schema";
 import { nextCookies } from "better-auth/next-js";
-import { jwt } from "better-auth/plugins"
+import { jwt } from "better-auth/plugins";
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }), 
   emailAndPassword: { 
@@ -19,7 +19,13 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string, 
     },
   },
-  plugins: [nextCookies(), jwt()],
+  plugins: [nextCookies(), jwt({
+    jwt: {
+      issuer: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+      audience: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
+    },
+    
+  }),],
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
   },

@@ -14,13 +14,8 @@ import {
 import staticData from "./data.json"
 import { authClient } from "@/lib/auth-client"
 import { useEffect, useState } from "react"
-import goApiClient from "@/lib/go-api-client"
 
 export default function Page() {
-
-  const [data, setData] = useState(null)
-
-
 
   return (
     <SidebarProvider
@@ -42,7 +37,7 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={data || staticData} />
+              <DataTable data={staticData} />
 
               {/* Componentes de teste da API */}
               <div className="px-4 lg:px-6">

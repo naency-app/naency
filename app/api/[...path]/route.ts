@@ -1,57 +1,120 @@
-import { auth } from '@/lib/auth'
-import { headers } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+// app/api/[...path]/route.ts
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080'
+import { auth } from '@/lib/auth';
+import { headers as nextHeaders } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 
-async function handler(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
-  const path = await params.then(x => x.path.join('/'))
+const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080';
 
-  const url = new URL(`/api/${path}`, GO_API_URL)
-  request.nextUrl.searchParams.forEach((value, key) => {
-    url.searchParams.append(key, value)
-  })
+function buildTargetUrl(path: string[], req: NextRequest) {
+  const base = `${GO_API_URL}/api/${path.join('/')}`;
+  const qs = req.nextUrl.search || '';
+  return new URL(`${base}${qs}`);
+}
 
-  const rheaders = new Headers(request.headers)
-  rheaders.delete('host')
+function filterRequestHeaders(h: Headers) {
+  const out = new Headers(h);
+  // hop-by-hop
+  [
+    'host',
+    'connection',
+    'keep-alive',
+    'proxy-connection',
+    'transfer-encoding',
+    'upgrade',
+    'te',
+    'trailers',
+    'proxy-authenticate',
+    'proxy-authorization',
+  ].forEach((k) => out.delete(k));
+  return out;
+}
 
+async function fetchWithTokenRetry(url: URL, init: RequestInit): Promise<Response> {
+  // 1ª tentativa
+  let resp = await fetch(url, init);
+  if (resp.status !== 401) return resp;
+
+  // 2ª tentativa: pede um token fresco e reenvia
   try {
-    const { token } = await auth.api.getToken({
-      headers: await headers(),
-    })
+    const { token: fresh } = await auth.api.getToken({ headers: await nextHeaders() });
+    if (!fresh) return resp;
 
-    rheaders.set("Authorization", `Bearer ${token}`)
+    const headers2 = new Headers(init.headers as Headers);
+    headers2.set('Authorization', `Bearer ${fresh}`);
 
-    const response = await fetch(url.toString(), {
-      method: request.method,
-      headers: rheaders,
-      body: request.body,
-      duplex: 'half',
-    } as RequestInit)
-
-    const responseHeaders = new Headers(response.headers)
-    responseHeaders.delete('content-encoding')
-    responseHeaders.delete('content-length')
-    responseHeaders.delete('transfer-encoding')
-
-    return new NextResponse(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: responseHeaders,
-    })
-  } catch (error) {
-    console.error('Proxy error:', error)
-    return NextResponse.json(
-      { error: 'Failed to proxy request' },
-      { status: 500 }
-    )
+    resp = await fetch(url, { ...init, headers: headers2, cache: 'no-store' });
+    return resp;
+  } catch {
+    return resp;
   }
 }
 
-export const GET = handler
-export const POST = handler
-export const PUT = handler
-export const DELETE = handler
-export const PATCH = handler
-export const HEAD = handler
-export const OPTIONS = handler
+async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
+  const url = buildTargetUrl(params.path, request);
+
+  // tenta obter token; se não tiver sessão, 401
+  let token: string | undefined;
+  try {
+    const { token: t } = await auth.api.getToken({ headers: await nextHeaders() });
+    token = t;
+    console.log('token', t );
+  } catch {
+    token = undefined;
+  }
+  if (!token) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  const reqHeaders = filterRequestHeaders(request.headers);
+  reqHeaders.set('Authorization', `Bearer ${token}`);
+
+  // Só encaminhe body quando fizer sentido
+  const method = request.method.toUpperCase();
+  const hasBody = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+  const init: RequestInit = {
+    method,
+    headers: reqHeaders,
+    body: hasBody ? request.body : undefined,
+    cache: 'no-store',
+  };
+
+  try {
+    const resp = await fetchWithTokenRetry(url, init);
+
+    const respHeaders = new Headers(resp.headers);
+    // remova headers que bagunçam o streaming/compressão
+    ['content-encoding', 'content-length', 'transfer-encoding', 'connection'].forEach((h) =>
+      respHeaders.delete(h),
+    );
+
+    return new NextResponse(resp.body, {
+      status: resp.status,
+      statusText: resp.statusText,
+      headers: respHeaders,
+    });
+  } catch (err) {
+    console.error('Proxy error:', err);
+    return NextResponse.json({ error: 'Failed to proxy request' }, { status: 502 });
+  }
+}
+
+// Preflight opcional (só se precisar responder no edge do Next)
+export const OPTIONS = async () =>
+  new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*', // ajuste quando tiver domínio
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Max-Age': '600',
+    },
+  });
+
+export const GET = proxy;
+export const POST = proxy;
+export const PUT = proxy;
+export const DELETE = proxy;
+export const PATCH = proxy;

@@ -3,38 +3,37 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import goApiClient, { DBUser } from "@/lib/go-api-client"
+import axios from "axios"
+import { User } from "better-auth"
+
+// Configure o axios para incluir credenciais e headers corretos
+const api = axios.create({
+  baseURL: 'http://localhost:8080',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: false,
+});
 
 export default function UsersList() {
-  const [users, setUsers] = useState<DBUser[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-
-      const response = await goApiClient.getAllUsers()
-
-      if (response.error) {
-        setError(response.error)
-        return
-      }
-
-      if (response.data && response.data.users) {
-        setUsers(response.data.users)
-      }
-    } catch (error) {
-      setError("Erro ao carregar usuários")
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  console.log(users);
   useEffect(() => {
-    fetchUsers()
-  }, [])
+    fetch("/api/users") // <-- chama o proxy, não direto o Go
+      .then((res) => {
+        if (!res.ok) throw new Error(`Erro ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        setUsers(data); // no Go o handler retorna { "data": [...] }
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar usuários:", err);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -64,36 +63,17 @@ export default function UsersList() {
     )
   }
 
-  if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuários</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={fetchUsers} variant="outline">
-              Tentar novamente
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Lista de Usuários</CardTitle>
-          <Button onClick={fetchUsers} variant="outline" size="sm">
-            Atualizar
-          </Button>
+
         </div>
       </CardHeader>
       <CardContent>
-        {users.length === 0 ? (
+        {/* {userslength === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-600">Nenhum usuário encontrado</p>
           </div>
@@ -112,7 +92,7 @@ export default function UsersList() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg">{user.name}</h3>
-                        {user.email_verified && (
+                        {user.emailVerified && (
                           <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
                             Verificado
                           </span>
@@ -120,8 +100,8 @@ export default function UsersList() {
                       </div>
                       <p className="text-gray-600 mb-2">{user.email}</p>
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>Criado em: {formatDate(user.created_at)}</p>
-                        <p>Atualizado em: {formatDate(user.updated_at)}</p>
+                        <p>Criado em: {formatDate(user?.createdAt?.toISOString())}</p>
+                        <p>Atualizado em: {formatDate(user?.updatedAt?.toISOString())}</p>
                         {user.image && (
                           <p>Imagem: {user.image}</p>
                         )}
@@ -135,7 +115,7 @@ export default function UsersList() {
               ))}
             </div>
           </div>
-        )}
+        )} */}
       </CardContent>
     </Card>
   )
