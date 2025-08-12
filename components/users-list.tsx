@@ -6,34 +6,13 @@ import { Button } from "@/components/ui/button"
 import axios from "axios"
 import { User } from "better-auth"
 
-// Configure o axios para incluir credenciais e headers corretos
-const api = axios.create({
-  baseURL: 'http://localhost:8080',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: false,
-});
 
 export default function UsersList() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   console.log(users);
-  useEffect(() => {
-    fetch("/api/users") // <-- chama o proxy, não direto o Go
-      .then((res) => {
-        if (!res.ok) throw new Error(`Erro ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setUsers(data); // no Go o handler retorna { "data": [...] }
-      })
-      .catch((err) => {
-        console.error("Erro ao buscar usuários:", err);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
