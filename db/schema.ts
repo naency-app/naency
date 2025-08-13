@@ -87,7 +87,7 @@ export const categories = pgTable("categories", {
 export const expenses = pgTable("expenses", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
-  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  amount: text("amount").notNull(),
   categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
   paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -1,18 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import axios from "axios"
-import { User } from "better-auth"
-
+import { trpc } from "@/lib/trpc"
+import { type User } from "@/types/trpc"
 
 export default function UsersList() {
-
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  console.log(users);
-  
+  const { data: users, isLoading, error } = trpc.user.getAll.useQuery();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -24,7 +18,7 @@ export default function UsersList() {
     })
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -42,17 +36,30 @@ export default function UsersList() {
     )
   }
 
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Erro ao carregar usuários</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-red-600">Erro: {error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Lista de Usuários</CardTitle>
-
         </div>
       </CardHeader>
       <CardContent>
-        {/* {userslength === 0 ? (
+        {!users || users.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-600">Nenhum usuário encontrado</p>
           </div>
@@ -71,16 +78,11 @@ export default function UsersList() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="font-semibold text-lg">{user.name}</h3>
-                        {user.emailVerified && (
-                          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Verificado
-                          </span>
-                        )}
                       </div>
                       <p className="text-gray-600 mb-2">{user.email}</p>
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>Criado em: {formatDate(user?.createdAt?.toISOString())}</p>
-                        <p>Atualizado em: {formatDate(user?.updatedAt?.toISOString())}</p>
+                        <p>Criado em: {formatDate(user.createdAt?.toString() || '')}</p>
+                        <p>Atualizado em: {formatDate(user.updatedAt?.toString() || '')}</p>
                         {user.image && (
                           <p>Imagem: {user.image}</p>
                         )}
@@ -94,7 +96,7 @@ export default function UsersList() {
               ))}
             </div>
           </div>
-        )} */}
+        )}
       </CardContent>
     </Card>
   )

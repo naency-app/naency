@@ -1,57 +1,109 @@
-import { DataTable } from "@/components/data-table";
-import { createCategory, listCategories } from "@/server/categories";
-import { revalidatePath } from "next/cache";
-import staticData from "../dashboard/data.json"
-export default async function CategoriesPage() {
-  const cats = await listCategories();
+"use client"
 
-  async function handleCreate(formData: FormData) {
-    "use server";
-    await createCategory({
-      name: formData.get("name"),
-      color: formData.get("color"),
-    });
-    revalidatePath("/categories");
-  }
+import { DataTable } from "@/components/data-table";
+import { trpc } from "@/lib/trpc";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import staticData from "../dashboard/data.json";
+import { type Category } from "@/types/trpc";
+import { TRPCClientErrorLike } from "@trpc/client";
+import { Badge } from "@/components/ui/badge";
+
+export default function CategoriesPage() {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("");
+
+  const { data: categories, isLoading, error } = trpc.categories.getAll.useQuery();
+  const utils = trpc.useUtils();
+
+  const createCategory = trpc.categories.create?.useMutation?.({
+    onSuccess: () => {
+      toast.success("Categoria criada com sucesso!");
+      setName("");
+      setColor("");
+      utils.categories.getAll.invalidate();
+    },
+    onError: (error: TRPCClientErrorLike<any>) => {
+      toast.error(`Erro ao criar categoria: ${error.message}`);
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (createCategory?.mutate) {
+      createCategory.mutate({ name, color: color || undefined });
+    }
+  };
 
   return (
     <>
-    <form action={handleCreate} className="flex gap-2">
-    <input
-      name="name"
-      placeholder="Nome da categoria"
-      className="border rounded px-3 py-2"
-      required
-    />
-    <input
-      name="color"
-      placeholder="Cor (opcional)"
-      className="border rounded px-3 py-2"
-    />
-    <button className="bg-black text-white px-4 py-2 rounded">
-      Criar
-    </button>
-  </form>
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Criar Nova Categoria</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <Input
+              name="name"
+              placeholder="Nome da categoria"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <Input
+              name="color"
+              placeholder="Cor (opcional)"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+            />
+            <Button 
+              type="submit" 
+              disabled={createCategory?.isPending}
+            >
+              {createCategory?.isPending ? "Criando..." : "Criar"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-  <ul className="mt-4">
-    {cats.map((c) => (
-      <li key={c.id}>
-        <span style={{ color: c.color || "#000" }}>{c.name}</span>
-      </li>
-    ))}
-  </ul>
- 
-    <div className="flex flex-1 flex-col">
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Lista de Categorias</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-4">Carregando...</div>
+          ) : error ? (
+            <div className="text-red-600">Erro: {error.message}</div>
+          ) : (
+            <ul className="space-y-2">
+              {categories?.map((c) => ( 
+                <li key={c.id} className="flex items-center gap-2">
+                  <Badge variant="outline" className="gap-1.5">
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={c.color ? { backgroundColor: c.color } : { backgroundColor: '#000' }}
+                      aria-hidden="true"
+                    ></span>
+                    {c.name}
+                  </Badge>
+                </li>
+              ))}
+            </ul> 
+          )}
+        </CardContent>
+      </Card>
 
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <DataTable data={staticData} />
-
-              
-            </div>
+      <div className="flex flex-1 flex-col">
+        <div className="@container/main flex flex-1 flex-col gap-2">
+          <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <DataTable data={staticData} />
           </div>
         </div>
-
-        </>
+      </div>
+    </>
   );
 }
