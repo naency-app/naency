@@ -8,6 +8,13 @@
       "when": 1754697622075,
       "tag": "0000_stale_the_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755045736780,
+      "tag": "0001_wandering_korath",
+      "breakpoints": true
     }
   ]
 }

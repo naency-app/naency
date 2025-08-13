@@ -1,13 +1,9 @@
-import { authClient } from "@/lib/auth-client";
-import Image from "next/image";
+
 import { redirect } from "next/navigation";
+import { getServerSession } from "@/lib/get-server-session";
 
 export default async function Home() {
-  const { data: session } = await authClient.getSession()
-  console.log(session)
-  if (session) {
-    redirect("/dashboard")
-  } else {
-    redirect("/login")
-  }
+  const session = await getServerSession();
+  if (session?.session) redirect("/dashboard");
+  redirect("/login");
 }

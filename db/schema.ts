@@ -4,6 +4,9 @@ import {
   timestamp,
   boolean,
   integer,
+  uuid,
+  varchar,
+  numeric,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -71,4 +74,21 @@ export const jwks = pgTable("jwks", {
   publicKey: text("public_key").notNull(),
   privateKey: text("private_key").notNull(),
   createdAt: timestamp("created_at").notNull(),
+});
+
+
+export const categories = pgTable("categories", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 120 }).notNull(),
+  color: varchar("color", { length: 24 }), // ex: tailwind token ou hex
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const expenses = pgTable("expenses", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 255 }).notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

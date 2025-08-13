@@ -38,11 +38,12 @@ export function LoginForm({
   const signWithGoogle = async () => {
     try {
       setIsLoading(true)
-      const data = await authClient.signIn.social({
+      const {data: session} = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
+        
       })
-      router.push("/dashboard")
+      console.log("Session:", session)
       toast.success("Login successful")
     } catch (error) {
       console.error("Google login error:", error)
