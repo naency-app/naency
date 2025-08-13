@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { usePathname } from "next/navigation"
 
 export function NavDocuments({
   items,
@@ -35,10 +36,11 @@ export function NavDocuments({
   }[]
 }) {
   const { isMobile } = useSidebar()
-
+  const pathname = usePathname()
+  console.log(pathname)
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Documents</SidebarGroupLabel>
+      <SidebarGroupLabel>{pathname.split("/").pop()}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
