@@ -3,7 +3,7 @@ import { publicProcedure, router } from "../trpc";
 import { expenses } from "@/db/schema";
 import z from "zod";
 
-export const expenseRouter = router({
+export const expensesRouter = router({
   getAll: publicProcedure.query(async () => {
     return await db.select().from(expenses);
   }),

@@ -160,7 +160,7 @@ export function SignupForm({
             <Button
               type="submit"
               className="w-full"
-              loading={isLoading || form.formState.isSubmitting}
+              isLoading={isLoading || form.formState.isSubmitting}
               disabled={isLoading}
             >
               Sign up
@@ -177,7 +177,7 @@ export function SignupForm({
               className="w-full"
               type="button"
               onClick={signWithGoogle}
-              loading={isLoading}
+              isLoading={isLoading}
               disabled={isLoading}
             >
               <GoogleIcon className="size-4" />
