@@ -34,17 +34,17 @@ import {
 import {
   ColumnDef,
   ColumnFiltersState,
+  SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  Row,
-  SortingState,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   useReactTable,
-  VisibilityState,
+  Row,
 } from "@tanstack/react-table"
 
 import { Badge } from "@/components/ui/badge"
@@ -96,7 +96,7 @@ function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> 
   )
 }
 
-function DraggableRow<TData>({ 
+function DataTableRow<TData>({ 
   row, 
   columns,
   enableDragAndDrop = false 
@@ -105,8 +105,8 @@ function DraggableRow<TData>({
   columns: ColumnDef<TData>[]
   enableDragAndDrop?: boolean
 }) {
-  const sortableProps = enableDragAndDrop ? useSortable({ id: row.id }) : null
-  const { transform, transition, setNodeRef, isDragging } = sortableProps || {}
+  const sortableProps = useSortable({ id: row.id })
+  const { transform, transition, setNodeRef, isDragging } = enableDragAndDrop ? sortableProps : {}
 
   return (
     <TableRow
@@ -214,7 +214,7 @@ export function DataTable<TData>({
       return [
         {
           id: "select",
-          header: ({ table }: any) => (
+          header: ({ table }: { table: ReturnType<typeof useReactTable<TData>> }) => (
             <div className="flex items-center justify-center">
               <Checkbox
                 checked={
@@ -226,7 +226,7 @@ export function DataTable<TData>({
               />
             </div>
           ),
-          cell: ({ row }: any) => (
+          cell: ({ row }: { row: Row<TData> }) => (
             <div className="flex items-center justify-center">
               <Checkbox
                 checked={row.getIsSelected()}
@@ -404,7 +404,7 @@ export function DataTable<TData>({
                     strategy={verticalListSortingStrategy}
                   >
                     {rows.map((row) => (
-                      <DraggableRow 
+                      <DataTableRow 
                         key={row.id} 
                         row={row} 
                         columns={finalColumns}
@@ -448,7 +448,7 @@ export function DataTable<TData>({
             <TableBody>
               {rows && rows.length > 0 ? (
                 rows.map((row) => (
-                  <DraggableRow 
+                  <DataTableRow 
                     key={row.id} 
                     row={row} 
                     columns={finalColumns}
