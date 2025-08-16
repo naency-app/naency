@@ -5,11 +5,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { toast } from "sonner";
-import { 
-  Drawer, 
-  DrawerContent, 
-  DrawerDescription, 
-  DrawerHeader, 
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
   DrawerTitle
 } from "@/components/ui/drawer";
 import {
@@ -49,7 +49,7 @@ export default function ExpensesPage() {
   const { data: expensesData, isLoading, error } = trpc.expenses.getAll.useQuery();
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const utils = trpc.useUtils();
-  
+
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: () => {
       toast.success("Despesa criada com sucesso!");
@@ -202,14 +202,14 @@ export default function ExpensesPage() {
     setEditingExpense(null);
   };
 
-  
+
 
   const expenseColumns: ColumnDef<Expense>[] = [
     {
       accessorKey: "name",
       header: "Descrição",
       cell: ({ row }) => (
-        <div 
+        <div
           className="font-medium cursor-pointer hover:text-primary transition-colors"
           onClick={() => handleViewExpense(row.original)}
         >
@@ -276,7 +276,7 @@ export default function ExpensesPage() {
               Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               variant="destructive"
               onClick={() => handleDeleteExpense(row.original)}
             >
@@ -328,8 +328,8 @@ export default function ExpensesPage() {
                               <IconDownload className="mr-2 h-4 w-4" />
                               Exportar ({selectedExpensesCount})
                             </Button>
-                            <Button 
-                              variant="destructive" 
+                            <Button
+                              variant="destructive"
                               size="sm"
                               onClick={handleBulkDelete}
                             >
@@ -351,15 +351,14 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {/* Drawer para criar/editar despesa */}
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction={isMobile ? "bottom" : "right"} >
+      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction={isMobile ? "bottom" : "right"} dismissible={false}>
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>
               {editingExpense ? "Editar Despesa" : "Nova Despesa"}
             </DrawerTitle>
             <DrawerDescription>
-              {editingExpense 
+              {editingExpense
                 ? "Atualize as informações da despesa selecionada."
                 : "Preencha as informações para criar uma nova despesa."
               }
@@ -389,8 +388,8 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-                          Tem certeza que deseja excluir a despesa &quot;{expenseToDelete?.name}&quot;? 
-            Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir a despesa &quot;{expenseToDelete?.name}&quot;?
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -411,7 +410,7 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir {selectedExpensesCount} despesas selecionadas? 
+              Tem certeza que deseja excluir {selectedExpensesCount} despesas selecionadas?
               Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>

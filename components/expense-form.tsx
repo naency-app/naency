@@ -25,8 +25,8 @@ import {
 } from "@/components/ui/form";
 
 const expenseSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  amount: z.string().min(1, "Valor é obrigatório"),
+  name: z.string().min(1, "Name is required"),
+  amount: z.string().min(1, "Amount is required"),
   categoryId: z.string().optional().or(z.literal("")),
   paidAt: z.date().optional().nullable(),
 });
@@ -46,15 +46,15 @@ interface ExpenseFormProps {
   isLoading?: boolean;
 }
 
-export function ExpenseForm({ 
-  expense, 
-  categories, 
-  onSubmit, 
-  onCancel, 
-  isLoading = false 
+export function ExpenseForm({
+  expense,
+  categories,
+  onSubmit,
+  onCancel,
+  isLoading = false
 }: ExpenseFormProps) {
   const [date, setDate] = useState<Date | undefined>(
-    expense?.paidAt ? new Date(expense.paidAt) : undefined
+    expense?.paidAt ? new Date(expense.paidAt) : new Date()
   );
 
   const form = useForm<ExpenseFormData>({
@@ -63,7 +63,7 @@ export function ExpenseForm({
       name: expense?.name || "",
       amount: expense?.amount || "",
       categoryId: expense?.categoryId || "",
-      paidAt: expense?.paidAt || undefined,
+      paidAt: expense?.paidAt || new Date(),
     },
   });
 
@@ -76,16 +76,16 @@ export function ExpenseForm({
   const handleFormSubmit = async (data: ExpenseFormData) => {
     console.log("Form data being submitted:", data);
     console.log("Form validation state:", form.formState);
-    
+
     // Limpar e validar os dados antes de enviar
     const cleanedData = {
       ...data,
       categoryId: data.categoryId && data.categoryId !== "" ? data.categoryId : undefined,
       paidAt: data.paidAt || undefined,
     };
-    
+
     console.log("Cleaned data:", cleanedData);
-    
+
     try {
       await onSubmit(cleanedData);
     } catch (error) {
@@ -96,15 +96,15 @@ export function ExpenseForm({
   const formatCurrency = (value: string) => {
     // Remove tudo exceto números e vírgula
     const numericValue = value.replace(/[^\d,]/g, "");
-    
+
     // Converte vírgula para ponto para parse
     const normalizedValue = numericValue.replace(",", ".");
-    
+
     // Se não tem ponto decimal, adiciona .00
     if (!normalizedValue.includes(".")) {
       return `${normalizedValue}.00`;
     }
-    
+
     return normalizedValue;
   };
 
@@ -122,10 +122,10 @@ export function ExpenseForm({
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Descrição *</FormLabel>
+              <FormLabel>Description *</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="Digite a descrição da despesa"
+                  placeholder="Enter expense description"
                   {...field}
                   disabled={isLoading}
                 />
@@ -141,7 +141,7 @@ export function ExpenseForm({
             name="amount"
             render={({ field }) => (
               <FormItem className="flex-[2]">
-                <FormLabel>Valor *</FormLabel>
+                <FormLabel>Amount *</FormLabel>
                 <FormControl>
                   <Input
                     type="text"
@@ -160,7 +160,7 @@ export function ExpenseForm({
             name="categoryId"
             render={({ field }) => (
               <FormItem className="flex-1">
-                <FormLabel>Categoria</FormLabel>
+                <FormLabel>Category </FormLabel>
                 <FormControl>
                   <Select
                     value={field.value || ""}
@@ -168,7 +168,7 @@ export function ExpenseForm({
                     disabled={isLoading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Categoria" />
+                      <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -198,7 +198,7 @@ export function ExpenseForm({
           name="paidAt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Data de pagamento</FormLabel>
+              <FormLabel>Payment date</FormLabel>
               <FormControl>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -211,7 +211,7 @@ export function ExpenseForm({
                       disabled={isLoading}
                     >
                       <IconCalendar className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP", { locale: ptBR }) : "Selecione uma data"}
+                      {date ? format(date, "PPP", { locale: ptBR }) : "Select a date"}
                       <IconChevronDown className="ml-auto h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
@@ -239,14 +239,14 @@ export function ExpenseForm({
             disabled={isLoading}
             className="flex-1"
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             type="submit"
             disabled={!form.formState.isValid || isLoading}
             className="flex-1"
           >
-            {isLoading ? "Salvando..." : expense ? "Atualizar" : "Criar"}
+            {isLoading ? "Saving..." : expense ? "Update" : "Create"}
           </Button>
         </div>
       </form>
