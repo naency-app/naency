@@ -157,7 +157,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="/dashboard">
-                <IconTableFilled className="!size-5" />
+                <IconTableFilled className="!size-5 text-primary" />
                 <span className="text-base font-semibold">Table Finance</span>
               </a>
             </SidebarMenuButton>

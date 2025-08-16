@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 export const categoriesRouter = router({
   getAll: publicProcedure.query(async () => {
-    // Implementar busca de categorias
+  
     return await db.select().from(categories);
   }),
 

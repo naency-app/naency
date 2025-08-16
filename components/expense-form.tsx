@@ -26,7 +26,7 @@ import {
 
 const expenseSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  amount: z.string().min(1, "Amount is required"),
+  amount: z.number().min(1, "Amount is required"),
   categoryId: z.string().optional().or(z.literal("")),
   paidAt: z.date().optional().nullable(),
 });
@@ -61,7 +61,7 @@ export function ExpenseForm({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       name: expense?.name || "",
-      amount: expense?.amount || "",
+      amount: expense?.amount || 0,
       categoryId: expense?.categoryId || "",
       paidAt: expense?.paidAt || new Date(),
     },

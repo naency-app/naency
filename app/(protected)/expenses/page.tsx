@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { type Expense } from "@/types/trpc";
-import { Badge } from "@/components/ui/badge";
+import { Badge, CategoryBadge } from "@/components/ui/badge";
 import { SectionCards } from "@/components/section-cards";
 import { ColumnDef } from "@tanstack/react-table";
 import { DataTable } from "@/components/data-table";
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ExpenseForm } from "@/components/expense-form";
 import { useSidebar } from "@/components/ui/sidebar";
+import { formatCurrency } from "@/helps/formatCurrency";
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function ExpensesPage() {
   const { isMobile } = useSidebar()
   const { data: expensesData, isLoading, error } = trpc.expenses.getAll.useQuery();
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
+  const { data: paidByData } = trpc.paidBy.getAll.useQuery();
   const utils = trpc.useUtils();
 
   const createExpense = trpc.expenses.create.useMutation({
@@ -126,20 +128,16 @@ export default function ExpensesPage() {
 
   const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length
 
-  // Funções auxiliares
   const getCategoryName = (categoryId: string | null | undefined) => {
-    if (!categoryId || !categoriesData) return "Sem categoria"
+    if (!categoryId || !categoriesData) return { name: "Sem categoria", color: "#000" }
     const category = categoriesData.find(cat => cat.id === categoryId)
-    return category?.name || "Categoria não encontrada"
+    return { name: category?.name || "Sem categoria", color: category?.color || "#000" }
   }
 
-  const formatCurrency = (amount: string) => {
-    const numericAmount = parseFloat(amount)
-    if (isNaN(numericAmount)) return "R$ 0,00"
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(numericAmount)
+  const getPaidByName = (paidById: string | null | undefined) => {
+    if (!paidById || !paidByData) return null
+    const paidBy = paidByData.find(paidBy => paidBy.id === paidById)
+    return paidBy?.name
   }
 
   const formatDate = (dateString: string | Date | null | undefined) => {
@@ -186,7 +184,7 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleFormSubmit = async (data: { name: string; amount: string; categoryId?: string; paidAt?: Date }) => {
+  const handleFormSubmit = async (data: { name: string; amount: number; categoryId?: string; paidAt?: Date }) => {
     if (editingExpense) {
       await updateExpense.mutateAsync({
         id: editingExpense.id,
@@ -206,45 +204,8 @@ export default function ExpensesPage() {
 
   const expenseColumns: ColumnDef<Expense>[] = [
     {
-      accessorKey: "name",
-      header: "Descrição",
-      cell: ({ row }) => (
-        <div
-          className="font-medium cursor-pointer hover:text-primary transition-colors"
-          onClick={() => handleViewExpense(row.original)}
-        >
-          {row.getValue("name")}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "amount",
-      header: "Valor",
-      cell: ({ row }) => {
-        const amount = row.getValue("amount") as string
-        return (
-          <div className="font-mono font-semibold text-green-600 dark:text-green-400">
-            {formatCurrency(amount)}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "categoryId",
-      header: "Categoria",
-      cell: ({ row }) => {
-        const categoryId = row.getValue("categoryId") as string | null | undefined
-        return (
-          <Badge variant="outline" className="flex items-center gap-1">
-            <IconCategory className="h-3 w-3" />
-            {getCategoryName(categoryId)}
-          </Badge>
-        )
-      },
-    },
-    {
       accessorKey: "paidAt",
-      header: "Data de pagamento",
+      header: "Payment date",
       cell: ({ row }) => {
         const paidAt = row.getValue("paidAt") as string | Date | null | undefined
         return (
@@ -256,6 +217,56 @@ export default function ExpensesPage() {
       },
     },
     {
+      accessorKey: "amount",
+      header: "Amount",
+      cell: ({ row }) => {
+        const amount = row.getValue("amount") as string
+        return (
+          <div className="font-mono font-semibold text-red-600 dark:text-red-400">
+            {formatCurrency(amount)}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "name",
+      header: "Description",
+      cell: ({ row }) => (
+        <div
+          className="font-medium cursor-pointer hover:text-primary transition-colors"
+          onClick={() => handleViewExpense(row.original)}
+        >
+          {row.getValue("name")}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "paidById",
+      header: "Paid by",
+      cell: ({ row }) => {
+        const paidById = row.getValue("paidById") as string | null | undefined
+        const paidBy = getPaidByName(paidById)
+        if (!paidBy) return '-'
+        return (
+          <Badge variant="outline" >
+            {paidBy}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "categoryId",
+      header: "Category",
+      cell: ({ row }) => {
+        const categoryId = row.getValue("categoryId") as string | null | undefined
+        const category = getCategoryName(categoryId)
+        return (
+          <CategoryBadge color={category.color} name={category.name} />
+        )
+      },
+    },
+
+    {
       id: "actions",
       header: "Ações",
       cell: ({ row }) => (
@@ -263,17 +274,17 @@ export default function ExpensesPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
               <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Abrir menu</span>
+              <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => handleViewExpense(row.original)}>
               <IconEye className="mr-2 h-4 w-4" />
-              Ver detalhes
+              View details
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleEditExpense(row.original)}>
               <IconEdit className="mr-2 h-4 w-4" />
-              Editar
+              Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -281,12 +292,13 @@ export default function ExpensesPage() {
               onClick={() => handleDeleteExpense(row.original)}
             >
               <IconTrash className="mr-2 h-4 w-4" />
-              Excluir
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       ),
     },
+
   ]
 
   return (
@@ -298,14 +310,14 @@ export default function ExpensesPage() {
             <div className="px-4 lg:px-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Gerenciamento de Despesas</CardTitle>
+                  <CardTitle>Expense management</CardTitle>
                   <CardDescription>
-                    Tabela com drag & drop, seleção de linhas e ações customizadas
+                    Here you can manage your expenses.
                   </CardDescription>
                   <CardAction>
                     <Button variant="outline" size="sm" onClick={handleCreateExpense}>
                       <IconPlus className="mr-2 h-4 w-4" />
-                      Adicionar Despesa
+                      Add expense
                     </Button>
                   </CardAction>
                 </CardHeader>
@@ -315,7 +327,7 @@ export default function ExpensesPage() {
                     columns={expenseColumns}
                     enableDragAndDrop={true}
                     enableSearch={true}
-                    searchPlaceholder="Buscar despesas..."
+                    searchPlaceholder="Search expenses..."
                     enableRowSelection={true}
                     enablePagination={true}
                     enableColumnVisibility={true}
@@ -323,24 +335,18 @@ export default function ExpensesPage() {
                     toolbarActions={
                       <div className="flex items-center gap-2">
                         {selectedExpensesCount > 0 && (
-                          <>
-                            <Button variant="outline" size="sm">
-                              <IconDownload className="mr-2 h-4 w-4" />
-                              Exportar ({selectedExpensesCount})
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={handleBulkDelete}
-                            >
-                              <IconTrash className="mr-2 h-4 w-4" />
-                              Excluir ({selectedExpensesCount})
-                            </Button>
-                          </>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleBulkDelete}
+                          >
+                            <IconTrash className="mr-2 h-4 w-4" />
+                            Delete ({selectedExpensesCount})
+                          </Button>
                         )}
                       </div>
                     }
-                    emptyMessage="Nenhuma despesa encontrada."
+                    emptyMessage="No expenses found."
                     onDataChange={handleExpenseDataChange}
                     onRowSelectionChange={handleExpenseSelectionChange}
                   />
@@ -355,12 +361,12 @@ export default function ExpensesPage() {
         <DrawerContent>
           <DrawerHeader>
             <DrawerTitle>
-              {editingExpense ? "Editar Despesa" : "Nova Despesa"}
+              {editingExpense ? "Edit Expense" : "New Expense"}
             </DrawerTitle>
             <DrawerDescription>
               {editingExpense
-                ? "Atualize as informações da despesa selecionada."
-                : "Preencha as informações para criar uma nova despesa."
+                ? "Update the information for the selected expense."
+                : "Fill in the information to create a new expense."
               }
             </DrawerDescription>
           </DrawerHeader>
@@ -382,45 +388,44 @@ export default function ExpensesPage() {
         </DrawerContent>
       </Drawer>
 
-      {/* Dialog de confirmação para deletar uma despesa */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirm deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a despesa &quot;{expenseToDelete?.name}&quot;?
-              Esta ação não pode ser desfeita.
+              Are you sure you want to delete the expense &quot;{expenseToDelete?.name}&quot;?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteExpense}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Excluir
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Dialog de confirmação para deletar múltiplas despesas */}
+      {/* Confirmation dialog for deleting multiple expenses */}
       <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão em massa</AlertDialogTitle>
+            <AlertDialogTitle>Confirm bulk deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir {selectedExpensesCount} despesas selecionadas?
-              Esta ação não pode ser desfeita.
+              Are you sure you want to delete {selectedExpensesCount} selected expenses?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmBulkDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Excluir {selectedExpensesCount}
+              Delete {selectedExpensesCount}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

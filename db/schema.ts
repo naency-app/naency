@@ -80,7 +80,6 @@ export const jwks = pgTable("jwks", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-/* ---------- FINANÇAS ---------- */
 
 export const categories = pgTable("categories", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -90,16 +89,25 @@ export const categories = pgTable("categories", {
 }, (t) => ({
   nameUniq: uniqueIndex("categories_name_uidx").on(t.name),
 }));
+export const paidBy = pgTable("paid_by", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: varchar("name", { length: 120 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  nameUniq: uniqueIndex("paid_by_name_uidx").on(t.name),
+}));
 
 export const expenses = pgTable("expenses", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
-  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull().$type<number>(),
   categoryId: uuid("category_id").references(() => categories.id, { onDelete: "set null" }),
   paidAt: timestamp("paid_at", { withTimezone: true, mode: "date" }),
+  paidById: uuid("paid_by_id").references(() => paidBy.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (t) => ({
   categoryIdx: index("expenses_category_id_idx").on(t.categoryId),
+  paidByIdIdx: index("expenses_paid_by_id_idx").on(t.paidById),
   nonNegativeAmount: check("expenses_amount_non_negative", sql`${t.amount} >= 0`),
 }));
 

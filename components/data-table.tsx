@@ -96,11 +96,11 @@ function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> 
   )
 }
 
-function DataTableRow<TData>({ 
-  row, 
+function DataTableRow<TData>({
+  row,
   columns,
-  enableDragAndDrop = false 
-}: { 
+  enableDragAndDrop = false
+}: {
   row: Row<TData>
   columns: ColumnDef<TData>[]
   enableDragAndDrop?: boolean
@@ -177,7 +177,7 @@ export function DataTable<TData>({
     pageSize: defaultPageSize,
   })
   const [globalFilter, setGlobalFilter] = React.useState("")
-  
+
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -279,7 +279,7 @@ export function DataTable<TData>({
 
   function handleDragEnd(event: DragEndEvent) {
     if (!enableDragAndDrop) return
-    
+
     const { active, over } = event
     if (active && over && active.id !== over.id) {
       const oldIndex = dataIds.indexOf(active.id)
@@ -301,9 +301,9 @@ export function DataTable<TData>({
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-muted-foreground">
-          {!finalColumns || finalColumns.length === 0 
-            ? "Nenhuma coluna definida" 
-            : "Carregando tabela..."}
+          {!finalColumns || finalColumns.length === 0
+            ? "No columns defined"
+            : "Loading table..."}
         </div>
       </div>
     )
@@ -388,9 +388,9 @@ export function DataTable<TData>({
                           {header.isPlaceholder
                             ? null
                             : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                         </TableHead>
                       )
                     })}
@@ -404,9 +404,9 @@ export function DataTable<TData>({
                     strategy={verticalListSortingStrategy}
                   >
                     {rows.map((row) => (
-                      <DataTableRow 
-                        key={row.id} 
-                        row={row} 
+                      <DataTableRow
+                        key={row.id}
+                        row={row}
                         columns={finalColumns}
                         enableDragAndDrop={enableDragAndDrop}
                       />
@@ -436,9 +436,9 @@ export function DataTable<TData>({
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     )
                   })}
@@ -448,9 +448,9 @@ export function DataTable<TData>({
             <TableBody>
               {rows && rows.length > 0 ? (
                 rows.map((row) => (
-                  <DataTableRow 
-                    key={row.id} 
-                    row={row} 
+                  <DataTableRow
+                    key={row.id}
+                    row={row}
                     columns={finalColumns}
                     enableDragAndDrop={false}
                   />

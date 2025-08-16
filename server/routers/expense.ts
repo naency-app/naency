@@ -10,10 +10,11 @@ export const expensesRouter = router({
   }),
 
   create: publicProcedure.input(z.object({
-    name: z.string().min(1, "Nome é obrigatório"),
-    amount: z.string().min(1, "Valor é obrigatório"),
+    name: z.string().min(1, "Name is required"),
+    amount: z.number().min(1, "Amount is required"),
     categoryId: z.string().optional().nullable(),
     paidAt: z.date().optional().nullable(),
+    paidById: z.string().optional().nullable(),
   })).mutation(async ({ input }) => {
     console.log("Creating expense with input:", input);
     
@@ -22,28 +23,21 @@ export const expensesRouter = router({
       amount: input.amount,
       categoryId: input.categoryId || null,
       paidAt: input.paidAt || null,
+      paidById: input.paidById || null,
     }).returning();
     
     return result[0];
   }),
 
   update: publicProcedure.input(z.object({
-    id: z.string().min(1, "ID é obrigatório"),
-    name: z.string().min(1, "Nome é obrigatório"),
-    amount: z.string().min(1, "Valor é obrigatório"),
+    id: z.string().min(1, "ID is required"),
+    name: z.string().min(1, "Name is required"),
+    amount: z.number().min(1, "Amount is required"),
     categoryId: z.string().optional().nullable(),
     paidAt: z.date().optional().nullable(),
+    paidById: z.string().optional().nullable(),
   })).mutation(async ({ input }) => {
-    console.log("=== UPDATE EXPENSE DEBUG ===");
-    console.log("Raw input:", input);
-    console.log("Input type:", typeof input);
-    console.log("Input keys:", Object.keys(input));
-    console.log("Input ID:", input.id);
-    console.log("Input name:", input.name);
-    console.log("Input amount:", input.amount);
-    console.log("Input categoryId:", input.categoryId);
-    console.log("Input paidAt:", input.paidAt);
-    console.log("==========================");
+    
     
     try {
       const result = await db.update(expenses)
@@ -52,11 +46,11 @@ export const expensesRouter = router({
           amount: input.amount,
           categoryId: input.categoryId || null,
           paidAt: input.paidAt || null,
+          paidById: input.paidById || null,
         })
         .where(eq(expenses.id, input.id))
         .returning();
       
-      console.log("Update result:", result);
       return result[0];
     } catch (error) {
       console.error("Error updating expense:", error);

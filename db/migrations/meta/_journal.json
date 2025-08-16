@@ -15,6 +15,20 @@
       "when": 1755045736780,
       "tag": "0001_wandering_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755374328600,
+      "tag": "0002_next_peter_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755376660142,
+      "tag": "0003_cuddly_proemial_gods",
+      "breakpoints": true
     }
   ]
 }
