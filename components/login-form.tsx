@@ -138,7 +138,7 @@ export function LoginForm({
             <Button
               type="submit"
               className="w-full"
-              loading={form.formState.isSubmitting}
+              isLoading={form.formState.isSubmitting}
               disabled={isLoading}
             >
               Login
@@ -155,7 +155,7 @@ export function LoginForm({
               className="w-full"
               type="button"
               onClick={signWithGoogle}
-              loading={isLoading}
+              isLoading={isLoading}
               disabled={isLoading}
             >
               <GoogleIcon className="size-4" />
