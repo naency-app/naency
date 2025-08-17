@@ -39,6 +39,8 @@ import {
 import { ExpenseForm } from "@/components/expense-form";
 import { useSidebar } from "@/components/ui/sidebar";
 import { formatCentsBRL, formatCurrency } from "@/helps/formatCurrency";
+import { expenseColumns } from "@/components/feature/expense/expenseColumns";
+import { ExpenseCards } from "@/components/feature/expense/expense-cards";
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -56,6 +58,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense created successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
@@ -68,6 +71,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense updated successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
@@ -80,6 +84,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense deleted successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
     },
@@ -92,6 +97,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success(`${selectedExpensesCount} expenses deleted successfully!`);
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setBulkDeleteDialogOpen(false);
       setSelectedExpenses({});
     },
@@ -104,7 +110,6 @@ export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({})
 
-  // Atualizar estado local quando os dados da API mudarem
   useEffect(() => {
     if (expensesData) {
       setExpenses(expensesData.map(expense => ({
@@ -136,15 +141,9 @@ export default function ExpensesPage() {
   const getPaidByName = (paidById: string | null | undefined) => {
     if (!paidById || !paidByData) return null
     const paidBy = paidByData.find(paidBy => paidBy.id === paidById)
-    return paidBy?.name
+    return paidBy?.name || null
   }
 
-  const formatDate = (dateString: string | Date | null | undefined) => {
-    if (!dateString) return "Data não informada"
-    const date = new Date(dateString)
-    if (isNaN(date.getTime())) return "Data inválida"
-    return date.toLocaleDateString('pt-BR')
-  }
 
   const handleCreateExpense = () => {
     setEditingExpense(null);
@@ -211,112 +210,14 @@ export default function ExpensesPage() {
 
 
 
-  const expenseColumns: ColumnDef<Expense>[] = [
-    {
-      accessorKey: "paidAt",
-      header: "Payment date",
-      cell: ({ row }) => {
-        const paidAt = row.getValue("paidAt") as string | Date | null | undefined
-        return (
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <IconCalendar className="h-4 w-4" />
-            {formatDate(paidAt)}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => {
-        const amount = row.getValue("amount") as number;
-        return (
-          <div className="font-mono font-semibold text-red-600 dark:text-red-400">
-            {formatCentsBRL(amount)}
-          </div>
-        )
-      },
-    },
-    {
-      accessorKey: "name",
-      header: "Description",
-      cell: ({ row }) => (
-        <div
-          className="font-medium cursor-pointer hover:text-primary transition-colors"
-          onClick={() => handleViewExpense(row.original)}
-        >
-          {row.getValue("name")}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "paidById",
-      header: "Paid by",
-      cell: ({ row }) => {
-        const paidById = row.getValue("paidById") as string | null | undefined
-        const paidBy = getPaidByName(paidById)
-        if (!paidBy) return '-'
-        return (
-          <Badge variant="outline" >
-            {paidBy}
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "categoryId",
-      header: "Category",
-      cell: ({ row }) => {
-        const categoryId = row.getValue("categoryId") as string | null | undefined
-        const category = getCategoryName(categoryId)
-        if (!category) return '-'
-        return (
-          <CategoryBadge color={category.color} name={category.name} />
-        )
-      },
-    },
 
-    {
-      id: "actions",
-      header: "Ações",
-      cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleViewExpense(row.original)}>
-              <IconEye className="mr-2 h-4 w-4" />
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditExpense(row.original)}>
-              <IconEdit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => handleDeleteExpense(row.original)}
-            >
-              <IconTrash className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
-
-  ]
 
   return (
     <>
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <SectionCards />
+            <ExpenseCards />
             <div className="px-4 lg:px-6">
               <Card>
                 <CardHeader>
@@ -334,7 +235,13 @@ export default function ExpensesPage() {
                 <CardContent>
                   <DataTable
                     data={expenses}
-                    columns={expenseColumns}
+                    columns={expenseColumns({
+                      handleViewExpense,
+                      handleEditExpense,
+                      handleDeleteExpense,
+                      getPaidByName,
+                      getCategoryName,
+                    })}
                     enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search expenses..."

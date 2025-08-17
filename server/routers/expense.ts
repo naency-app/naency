@@ -1,7 +1,7 @@
 import { db } from "@/db/drizzle";
 import { protectedProcedure, router } from "../trpc";
 import { expenses } from "@/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -22,6 +22,21 @@ export const expensesRouter = router({
       .select()
       .from(expenses)
       .where(eq(expenses.userId, ctx.userId));
+  }),
+
+  getTotal: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.userId) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    
+    const result = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${expenses.amount}), 0)`
+      })
+      .from(expenses)
+      .where(eq(expenses.userId, ctx.userId));
+    
+    return result[0]?.total || 0;
   }),
 
   create: protectedProcedure.input(baseExpense).mutation(async ({ input, ctx }) => {

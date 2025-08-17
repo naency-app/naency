@@ -98,7 +98,7 @@ export function ExpenseForm({
       console.error("Error in form submission:", error);
     }
   };
-
+  console.log(form.formState.errors);
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -143,9 +143,9 @@ export function ExpenseForm({
           )}
         />
 
-        <FieldCategory<ExpenseFormData> name="categoryId" allowClear />
+        <FieldCategory<ExpenseFormData> name="categoryId" />
 
-        <FieldPaidBy<ExpenseFormData> name="paidById" allowClear />
+        <FieldPaidBy<ExpenseFormData> name="paidById" />
 
 
         <FormField
