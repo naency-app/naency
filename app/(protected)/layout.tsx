@@ -1,0 +1,29 @@
+import { redirect } from "next/navigation";
+
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { AppSidebar } from "@/components/app-sidebar";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { getServerSession } from "@/lib/get-server-session";
+
+export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession();
+  if (!session?.session) redirect("/login");
+
+  return (
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <NuqsAdapter>{children}</NuqsAdapter>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}

@@ -55,11 +55,8 @@ export function SignupForm({
   }
 
   async function onSubmit(values: z.infer<typeof signupSchema>) {
-    console.log("Signup form submitted with values:", values)
-
     try {
       setIsLoading(true)
-      console.log("Attempting to sign up:", { email: values.email, name: values.name })
       await signUp(values.email, values.password, values.name)
       toast.success("Account created successfully")
       router.push("/dashboard")
@@ -72,7 +69,6 @@ export function SignupForm({
   }
 
   const handleFormSubmit = form.handleSubmit(onSubmit, (errors) => {
-    console.log("Form validation errors:", errors)
     toast.error("Please check your input and try again")
   })
 
@@ -160,7 +156,7 @@ export function SignupForm({
             <Button
               type="submit"
               className="w-full"
-              loading={isLoading || form.formState.isSubmitting}
+              isLoading={isLoading || form.formState.isSubmitting}
               disabled={isLoading}
             >
               Sign up
@@ -177,7 +173,7 @@ export function SignupForm({
               className="w-full"
               type="button"
               onClick={signWithGoogle}
-              loading={isLoading}
+              isLoading={isLoading}
               disabled={isLoading}
             >
               <GoogleIcon className="size-4" />

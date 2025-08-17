@@ -60,7 +60,6 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
   try {
     const { token: t } = await auth.api.getToken({ headers: await nextHeaders() });
     token = t;
-    console.log('token', t );
   } catch {
     token = undefined;
   }

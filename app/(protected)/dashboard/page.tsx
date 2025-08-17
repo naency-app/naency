@@ -14,11 +14,12 @@ import {
 import staticData from "./data.json"
 import { authClient } from "@/lib/auth-client"
 import { useEffect, useState } from "react"
+import { ColumnDef } from "@tanstack/react-table"
+import { schema } from "@/components/data-table-expense"
+import z from "zod"
 
 export default function Page() {
-
   return (
-   
         <div className="flex flex-1 flex-col">
 
           <div className="@container/main flex flex-1 flex-col gap-2">
@@ -27,7 +28,7 @@ export default function Page() {
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
-              <DataTable data={staticData} />
+              <DataTable data={staticData} columns={columns} />
 
               {/* Componentes de teste da API */}
               <div className="px-4 lg:px-6">

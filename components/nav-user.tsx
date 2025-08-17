@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/sidebar"
 import { authClient } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 
 export function NavUser({
   user,
@@ -42,7 +43,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const router = useRouter()
   const { data: session } = authClient.useSession()
-
+  const queryClient = useQueryClient()
 
   const signOut = async () => {
     await authClient.signOut({
@@ -52,6 +53,7 @@ export function NavUser({
         },
       },
     });
+    queryClient.clear();
   }
   return (
     <SidebarMenu>
