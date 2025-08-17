@@ -23,6 +23,7 @@ export type Expense = {
   name: string;
   amount: number;
   categoryId?: string;
+  paidById?: string;
   paidAt?: Date;
   createdAt?: Date;
 };

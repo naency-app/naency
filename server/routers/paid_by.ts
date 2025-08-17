@@ -3,6 +3,7 @@ import { db } from "../db";
 import { publicProcedure, router } from "../trpc";
 import z from "zod";
 import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 export const paidByRouter = router({
   getAll: publicProcedure.query(async () => {
@@ -18,9 +19,13 @@ export const paidByRouter = router({
 
   create: publicProcedure.input(z.object({
     name: z.string().min(1, "Name is required"),
-  })).mutation(async ({ input }) => {
+  })).mutation(async ({ input, ctx }) => {
+    if (!ctx.userId) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
     const result = await db.insert(paidBy).values({
       name: input.name,
+      userId: ctx.userId!,
     }).returning();
 
     return result[0];

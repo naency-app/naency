@@ -38,12 +38,10 @@ export function LoginForm({
   const signWithGoogle = async () => {
     try {
       setIsLoading(true)
-      const {data: session} = await authClient.signIn.social({
+      const { data: session } = await authClient.signIn.social({
         provider: "google",
         callbackURL: "/dashboard",
-        
       })
-      console.log("Session:", session)
       toast.success("Login successful")
     } catch (error) {
       console.error("Google login error:", error)
@@ -54,11 +52,8 @@ export function LoginForm({
   }
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
-    console.log("Login form submitted with values:", values)
-
     try {
       setIsLoading(true)
-      console.log("Attempting to sign in:", { email: values.email })
       await signIn(values.email, values.password)
       toast.success("Login successful")
       router.push("/dashboard")
@@ -71,7 +66,6 @@ export function LoginForm({
   }
 
   const handleFormSubmit = form.handleSubmit(onSubmit, (errors) => {
-    console.log("Form validation errors:", errors)
     toast.error("Please check your input and try again")
   })
 

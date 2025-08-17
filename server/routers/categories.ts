@@ -3,6 +3,7 @@ import { router, publicProcedure } from '../trpc';
 import { db } from '../db';
 import { categories } from '@/db/schema';
 import { eq } from 'drizzle-orm';
+import { TRPCError } from '@trpc/server';
 
 export const categoriesRouter = router({
   getAll: publicProcedure.query(async () => {
@@ -22,11 +23,15 @@ export const categoriesRouter = router({
       name: z.string().min(1),
       color: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.userId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
       // Implementar lógica de criação
       const result = await db.insert(categories).values({
         name: input.name,
         color: input.color,
+        userId: ctx.userId!,
       }).returning();
       
       return result[0];

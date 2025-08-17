@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ExpenseForm } from "@/components/expense-form";
 import { useSidebar } from "@/components/ui/sidebar";
-import { formatCurrency } from "@/helps/formatCurrency";
+import { formatCentsBRL, formatCurrency } from "@/helps/formatCurrency";
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -54,53 +54,53 @@ export default function ExpensesPage() {
 
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: () => {
-      toast.success("Despesa criada com sucesso!");
+      toast.success("Expense created successfully!");
       utils.expenses.getAll.invalidate();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
     onError: (error) => {
-      toast.error(`Erro ao criar despesa: ${error.message}`);
+      toast.error(`Error creating expense: ${error.message}`);
     },
   });
 
   const updateExpense = trpc.expenses.update.useMutation({
     onSuccess: () => {
-      toast.success("Despesa atualizada com sucesso!");
+      toast.success("Expense updated successfully!");
       utils.expenses.getAll.invalidate();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
     onError: (error) => {
-      toast.error(`Erro ao atualizar despesa: ${error.message}`);
+      toast.error(`Error updating expense: ${error.message}`);
     },
   });
 
   const deleteExpense = trpc.expenses.delete.useMutation({
     onSuccess: () => {
-      toast.success("Despesa excluída com sucesso!");
+      toast.success("Expense deleted successfully!");
       utils.expenses.getAll.invalidate();
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
     },
     onError: (error) => {
-      toast.error(`Erro ao excluir despesa: ${error.message}`);
+      toast.error(`Error deleting expense: ${error.message}`);
     },
   });
 
   const deleteManyExpenses = trpc.expenses.deleteMany.useMutation({
     onSuccess: () => {
-      toast.success(`${selectedExpensesCount} despesas excluídas com sucesso!`);
+      toast.success(`${selectedExpensesCount} expenses deleted successfully!`);
       utils.expenses.getAll.invalidate();
       setBulkDeleteDialogOpen(false);
       setSelectedExpenses({});
     },
     onError: (error) => {
-      toast.error(`Erro ao excluir despesas: ${error.message}`);
+      toast.error(`Error deleting expenses: ${error.message}`);
     },
   });
 
-  console.log(expensesData)
+
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({})
 
@@ -110,6 +110,7 @@ export default function ExpensesPage() {
       setExpenses(expensesData.map(expense => ({
         ...expense,
         categoryId: expense.categoryId || undefined,
+        paidById: expense.paidById || undefined,
         paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
         createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined
       })))
@@ -118,20 +119,18 @@ export default function ExpensesPage() {
 
   const handleExpenseDataChange = (newData: Expense[]) => {
     setExpenses(newData)
-    console.log("Despesas reordenadas:", newData)
   }
 
   const handleExpenseSelectionChange = (selection: Record<string, boolean>) => {
     setSelectedExpenses(selection)
-    console.log("Seleção de despesas:", selection)
   }
 
   const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length
 
   const getCategoryName = (categoryId: string | null | undefined) => {
-    if (!categoryId || !categoriesData) return { name: "Sem categoria", color: "#000" }
+    if (!categoryId || !categoriesData) return null
     const category = categoriesData.find(cat => cat.id === categoryId)
-    return { name: category?.name || "Sem categoria", color: category?.color || "#000" }
+    return { name: category?.name || "No category", color: category?.color || "#000" }
   }
 
   const getPaidByName = (paidById: string | null | undefined) => {
@@ -184,14 +183,24 @@ export default function ExpensesPage() {
     }
   };
 
-  const handleFormSubmit = async (data: { name: string; amount: number; categoryId?: string; paidAt?: Date }) => {
+  const handleFormSubmit = async (data: { name: string; amount: number; categoryId?: string | null; paidById?: string | null; paidAt?: Date }) => {
     if (editingExpense) {
       await updateExpense.mutateAsync({
         id: editingExpense.id,
-        ...data,
+        name: data.name,
+        amount: data.amount,
+        categoryId: data.categoryId || undefined,
+        paidById: data.paidById || undefined,
+        paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     } else {
-      await createExpense.mutateAsync(data);
+      await createExpense.mutateAsync({
+        name: data.name,
+        amount: data.amount,
+        categoryId: data.categoryId || undefined,
+        paidById: data.paidById || undefined,
+        paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
+      });
     }
   };
 
@@ -220,10 +229,10 @@ export default function ExpensesPage() {
       accessorKey: "amount",
       header: "Amount",
       cell: ({ row }) => {
-        const amount = row.getValue("amount") as string
+        const amount = row.getValue("amount") as number;
         return (
           <div className="font-mono font-semibold text-red-600 dark:text-red-400">
-            {formatCurrency(amount)}
+            {formatCentsBRL(amount)}
           </div>
         )
       },
@@ -260,6 +269,7 @@ export default function ExpensesPage() {
       cell: ({ row }) => {
         const categoryId = row.getValue("categoryId") as string | null | undefined
         const category = getCategoryName(categoryId)
+        if (!category) return '-'
         return (
           <CategoryBadge color={category.color} name={category.name} />
         )
@@ -379,6 +389,10 @@ export default function ExpensesPage() {
                   color: cat.color || undefined,
                   createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined
                 }))}
+                paidBy={paidByData?.map(paidBy => ({
+                  ...paidBy,
+                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined
+                }))}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createExpense.isPending || updateExpense.isPending}
@@ -409,7 +423,6 @@ export default function ExpensesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Confirmation dialog for deleting multiple expenses */}
       <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

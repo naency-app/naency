@@ -152,9 +152,7 @@ export function DraggableUsersTable() {
         enableColumnVisibility={true}
         showToolbar={true}
         emptyMessage="Nenhum usuário encontrado."
-        onDataChange={(newData) => {
-          console.log("Dados reordenados:", newData)
-        }}
+
       />
     </div>
   )

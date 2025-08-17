@@ -37,7 +37,6 @@ export function NavDocuments({
 }) {
   const { isMobile } = useSidebar()
   const pathname = usePathname()
-  console.log(pathname)
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>{pathname.split("/").pop()}</SidebarGroupLabel>

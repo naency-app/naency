@@ -440,7 +440,7 @@ export function DataTableExpense({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <IconLayoutColumns />
-                <span className="hidden lg:inline">Customize Columns</span>
+                <span className="hidden lg:inline">Customize columns</span>
                 <span className="lg:hidden">Columns</span>
                 <IconChevronDown />
               </Button>
@@ -497,9 +497,9 @@ export function DataTableExpense({
                           {header.isPlaceholder
                             ? null
                             : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
                         </TableHead>
                       )
                     })}

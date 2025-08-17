@@ -23,25 +23,33 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { FieldCategory } from "./field-category";
+import { FieldPaidBy } from "./field-paid-by";
+import { formatCentsBRL, parseCurrencyToCents } from "@/helps/formatCurrency";
 
 const expenseSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  amount: z.number().min(1, "Amount is required"),
-  categoryId: z.string().optional().or(z.literal("")),
-  paidAt: z.date().optional().nullable(),
+  amount: z.number().min(1, "Amount is required"), // Agora aceita valores como 589734 (centavos)
+  categoryId: z.string().uuid().nullable().optional(),
+  paidById: z.string().uuid().nullable().optional(),
+  paidAt: z.string().optional(),
 });
 
 type ExpenseFormData = z.infer<typeof expenseSchema>;
 
+type ProcessedExpenseData = {
+  name: string;
+  amount: number;
+  categoryId?: string | null;
+  paidById?: string | null;
+  paidAt?: Date;
+};
+
 interface ExpenseFormProps {
   expense?: Expense;
   categories: Category[];
-  onSubmit: (data: {
-    name: string;
-    amount: string;
-    categoryId?: string;
-    paidAt?: Date;
-  }) => Promise<void>;
+  paidBy?: Array<{ id: string; name: string; createdAt?: Date }>;
+  onSubmit: (data: ProcessedExpenseData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
@@ -60,58 +68,35 @@ export function ExpenseForm({
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      name: expense?.name || "",
-      amount: expense?.amount || 0,
-      categoryId: expense?.categoryId || "",
-      paidAt: expense?.paidAt || new Date(),
+      name: expense?.name ?? "",
+      amount: expense?.amount ?? 0,
+      categoryId: expense?.categoryId ?? null,
+      paidById: expense?.paidById ?? null,
+      paidAt: expense?.paidAt ? expense.paidAt.toISOString() : undefined,
     },
+    mode: "onChange",
   });
 
   useEffect(() => {
     if (date) {
-      form.setValue("paidAt", date);
+      form.setValue("paidAt", date.toISOString());
     }
   }, [date, form]);
 
   const handleFormSubmit = async (data: ExpenseFormData) => {
-    console.log("Form data being submitted:", data);
-    console.log("Form validation state:", form.formState);
-
-    // Limpar e validar os dados antes de enviar
-    const cleanedData = {
-      ...data,
-      categoryId: data.categoryId && data.categoryId !== "" ? data.categoryId : undefined,
-      paidAt: data.paidAt || undefined,
+    const cleanedData: ProcessedExpenseData = {
+      name: data.name,
+      amount: data.amount,
+      categoryId: data.categoryId || undefined,
+      paidById: data.paidById || undefined,
+      paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
     };
-
-    console.log("Cleaned data:", cleanedData);
 
     try {
       await onSubmit(cleanedData);
     } catch (error) {
       console.error("Error in form submission:", error);
     }
-  };
-
-  const formatCurrency = (value: string) => {
-    // Remove tudo exceto números e vírgula
-    const numericValue = value.replace(/[^\d,]/g, "");
-
-    // Converte vírgula para ponto para parse
-    const normalizedValue = numericValue.replace(",", ".");
-
-    // Se não tem ponto decimal, adiciona .00
-    if (!normalizedValue.includes(".")) {
-      return `${normalizedValue}.00`;
-    }
-
-    return normalizedValue;
-  };
-
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    const formattedValue = formatCurrency(value);
-    form.setValue("amount", formattedValue);
   };
 
   return (
@@ -135,63 +120,33 @@ export function ExpenseForm({
           )}
         />
 
-        <div className="flex flex-row gap-4 w-full">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem className="flex-[2]">
-                <FormLabel>Amount *</FormLabel>
-                <FormControl>
-                  <Input
-                    type="text"
-                    value={field.value}
-                    onChange={handleAmountChange}
-                    disabled={isLoading}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
 
-          <FormField
-            control={form.control}
-            name="categoryId"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>Category </FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value || ""}
-                    onValueChange={(value) => field.onChange(value || undefined)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          <div className="flex items-center gap-2">
-                            {category.color && (
-                              <div
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: category.color }}
-                              />
-                            )}
-                            {category.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem className="flex-[2]">
+              <FormLabel>Amount *</FormLabel>
+              <FormControl>
+                <Input
+
+                  value={formatCentsBRL(Number(field.value ?? 0))}
+                  onChange={(e) => {
+                    const cents = parseCurrencyToCents(e.target.value);
+                    field.onChange(cents);
+                  }}
+                  inputMode="numeric"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FieldCategory<ExpenseFormData> name="categoryId" allowClear />
+
+        <FieldPaidBy<ExpenseFormData> name="paidById" allowClear />
+
 
         <FormField
           control={form.control}
@@ -245,8 +200,9 @@ export function ExpenseForm({
             type="submit"
             disabled={!form.formState.isValid || isLoading}
             className="flex-1"
+            isLoading={isLoading}
           >
-            {isLoading ? "Saving..." : expense ? "Update" : "Create"}
+            {expense ? "Update" : "Create"}
           </Button>
         </div>
       </form>
