@@ -20,9 +20,8 @@ export function SiteHeader() {
         />
         <h1 className="text-base font-medium">{capitalizeFirstLetter(pathname.split("/").pop() || "")}</h1>
         <div className="ml-auto flex items-center gap-2">
-        <DatePicker />
+          <DatePicker />
           <ModeToggle />
-
         </div>
       </div>
     </header>

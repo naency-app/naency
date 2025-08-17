@@ -1,14 +1,10 @@
 import { trpc } from "@/lib/trpc";
-import {
-  SelectTrigger, SelectValue, SelectContent, SelectItem, Select,
-  SelectLabel, SelectGroup,
-} from "./ui/select";
+import { InputWithSearch, type SelectOption } from "./ui/input-with-search";
 import {
   FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "./ui/form";
 import { Skeleton } from "./ui/skeleton";
 import { useFormContext, type FieldValues, type Path } from "react-hook-form";
-import { Button } from "./ui/button";
 
 type Props<T extends FieldValues> = {
   name: Path<T>;
@@ -16,7 +12,6 @@ type Props<T extends FieldValues> = {
   placeholder?: string;
   disabled?: boolean;
   allowClear?: boolean;
-  clearLabel?: string;
 };
 
 export function FieldPaidBy<T extends FieldValues>({
@@ -24,60 +19,44 @@ export function FieldPaidBy<T extends FieldValues>({
   label = "Paid By",
   placeholder = "Paid By",
   disabled,
-  allowClear = false,
-  clearLabel = "Limpar",
 }: Props<T>) {
-  const { control, setValue, getValues, trigger } = useFormContext<T>();
+  const { control, trigger } = useFormContext<T>();
   const { data: paidBy, isLoading } = trpc.paidBy.getAll.useQuery();
 
   if (isLoading) return <Skeleton className="h-10 w-full" />;
+
+  const paidByOptions: SelectOption[] = [
+    ...(paidBy?.map((user) => ({
+      value: user.id,
+      label: user.name,
+    })) || [])
+  ];
 
   return (
     <FormField
       control={control}
       name={name}
       render={({ field }) => {
-        const hasValue = typeof field.value === "string" && field.value.length > 0;
-
         return (
           <FormItem className="flex-1">
             <FormLabel>{label}</FormLabel>
             <FormControl>
               <div className="flex items-center gap-2">
-                <Select
+                <InputWithSearch
+                  options={paidByOptions}
                   value={typeof field.value === "string" ? field.value : ""}
-                  onValueChange={(v) => {
-                    const next = v === undefined ? (undefined as unknown as T[typeof name]) : (v as unknown as T[typeof name]);
+                  onValueChange={(value) => {
+                    // Se value for undefined ou string vazia, define como null para o RHF
+                    const next = (value === "" || value === undefined) ? (null as unknown as T[typeof name]) : (value as unknown as T[typeof name]);
                     field.onChange(next);
-                    trigger(name as any);
+                    trigger(name);
                   }}
+                  placeholder={placeholder}
+                  searchPlaceholder="Search users..."
+                  emptyMessage="No user found."
                   disabled={disabled}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder={placeholder} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Categories</SelectLabel>
-
-                      {allowClear && (
-                        <SelectItem value={undefined as unknown as T[typeof name]} >
-                          — none —
-                        </SelectItem>
-                      )}
-
-                      {paidBy?.map((paidBy) => (
-                        <SelectItem key={paidBy.id} value={paidBy.id}>
-                          <div className="flex items-center gap-2">
-                            {paidBy.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-
-
+                  className="flex-1"
+                />
               </div>
             </FormControl>
             <FormMessage />

@@ -40,6 +40,7 @@ import { ExpenseForm } from "@/components/expense-form";
 import { useSidebar } from "@/components/ui/sidebar";
 import { formatCentsBRL, formatCurrency } from "@/helps/formatCurrency";
 import { expenseColumns } from "@/components/feature/expense/expenseColumns";
+import { ExpenseCards } from "@/components/feature/expense/expense-cards";
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -216,7 +217,7 @@ export default function ExpensesPage() {
       <div className="flex flex-1 flex-col">
         <div className="@container/main flex flex-1 flex-col gap-2">
           <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-            <SectionCards />
+            <ExpenseCards />
             <div className="px-4 lg:px-6">
               <Card>
                 <CardHeader>
