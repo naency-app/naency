@@ -57,6 +57,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense created successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
@@ -69,6 +70,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense updated successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
       setEditingExpense(null);
     },
@@ -81,6 +83,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success("Expense deleted successfully!");
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setDeleteDialogOpen(false);
       setExpenseToDelete(null);
     },
@@ -93,6 +96,7 @@ export default function ExpensesPage() {
     onSuccess: () => {
       toast.success(`${selectedExpensesCount} expenses deleted successfully!`);
       utils.expenses.getAll.invalidate();
+      utils.expenses.getTotal.refetch();
       setBulkDeleteDialogOpen(false);
       setSelectedExpenses({});
     },
