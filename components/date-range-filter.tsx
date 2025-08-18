@@ -1,0 +1,81 @@
+'use client';
+
+import { format, subDays } from 'date-fns';
+import { CalendarIcon, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
+import type { DateRange } from 'react-day-picker';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useDateStore } from '@/lib/date-store';
+import { cn } from '@/lib/utils';
+
+export default function DateRangeFilter() {
+  const { dateRange, setDateRange, resetToDefault } = useDateStore();
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSelect = (range: DateRange | undefined) => {
+    if (range?.from) {
+      setDateRange({
+        from: range.from,
+        to: range.to || range.from,
+      });
+    }
+  };
+
+  const handleReset = () => {
+    resetToDefault();
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="group bg-background hover:bg-background border-input justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] min-w-[280px]"
+          >
+            <span className={cn('truncate', !dateRange?.from && 'text-muted-foreground')}>
+              {dateRange?.from ? (
+                dateRange.to ? (
+                  <>
+                    {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
+                  </>
+                ) : (
+                  format(dateRange.from, 'LLL dd, y')
+                )
+              ) : (
+                'Selecione um período'
+              )}
+            </span>
+            <CalendarIcon
+              size={16}
+              className="text-muted-foreground/80 group-hover:text-foreground shrink-0 transition-colors"
+              aria-hidden="true"
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2" align="start">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={dateRange?.from}
+            selected={dateRange}
+            onSelect={handleSelect}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={handleReset}
+        title="Resetar para últimos 30 dias"
+        className="shrink-0"
+      >
+        <RotateCcw size={16} />
+      </Button>
+    </div>
+  );
+}

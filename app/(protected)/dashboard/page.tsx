@@ -15,7 +15,7 @@ export default function Page() {
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive />
           </div>
-          <DataTable data={staticData} columns={columns} />
+
 
           {/* Componentes de teste da API */}
           <div className="px-4 lg:px-6">

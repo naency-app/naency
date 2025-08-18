@@ -1,5 +1,5 @@
 import { TRPCError } from '@trpc/server';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
 import { expenses } from '@/db/schema';
@@ -13,17 +13,55 @@ const baseExpense = z.object({
   paidById: z.string().uuid().optional().nullable(),
 });
 
+const dateRangeFilter = z.object({
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+});
+
 export const expensesRouter = router({
-  getAll: protectedProcedure.query(async ({ ctx }) => {
+  getAll: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
-    return await db.select().from(expenses).where(eq(expenses.userId, ctx.userId));
+
+    const baseCondition = eq(expenses.userId, ctx.userId);
+
+    // Constrói as condições de filtro
+    const conditions = [baseCondition];
+    if (input?.from) {
+      conditions.push(gte(expenses.paidAt, input.from));
+    }
+    if (input?.to) {
+      // Adiciona 1 dia para incluir o dia final
+      const endDate = new Date(input.to);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(expenses.paidAt, endDate));
+    }
+
+    return await db
+      .select()
+      .from(expenses)
+      .where(and(...conditions))
+      .orderBy(expenses.paidAt);
   }),
 
-  getTotal: protectedProcedure.query(async ({ ctx }) => {
+  getTotal: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+
+    const baseCondition = eq(expenses.userId, ctx.userId);
+
+    // Constrói as condições de filtro
+    const conditions = [baseCondition];
+    if (input?.from) {
+      conditions.push(gte(expenses.paidAt, input.from));
+    }
+    if (input?.to) {
+      // Adiciona 1 dia para incluir o dia final
+      const endDate = new Date(input.to);
+      endDate.setDate(endDate.getDate() + 1);
+      conditions.push(lte(expenses.paidAt, endDate));
     }
 
     const result = await db
@@ -31,7 +69,7 @@ export const expensesRouter = router({
         total: sql<number>`COALESCE(SUM(${expenses.amount}), 0)`,
       })
       .from(expenses)
-      .where(eq(expenses.userId, ctx.userId));
+      .where(and(...conditions));
 
     return result[0]?.total || 0;
   }),

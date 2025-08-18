@@ -4,6 +4,7 @@ import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable } from '@/components/data-table';
+import DateRangeFilter from '@/components/date-range-filter';
 import { ExpenseForm } from '@/components/expense-form';
 import { ExpenseCards } from '@/components/feature/expense/expense-cards';
 import { expenseColumns } from '@/components/feature/expense/expenseColumns';
@@ -34,6 +35,7 @@ import {
   DrawerTitle,
 } from '@/components/ui/drawer';
 import { useSidebar } from '@/components/ui/sidebar';
+import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
 import type { Expense } from '@/types/trpc';
 
@@ -44,7 +46,12 @@ export default function ExpensesPage() {
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
-  const { data: expensesData } = trpc.expenses.getAll.useQuery();
+  const { dateRange } = useDateFilter();
+
+  const { data: expensesData } = trpc.expenses.getAll.useQuery({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const { data: paidByData } = trpc.paidBy.getAll.useQuery();
   const utils = trpc.useUtils();
@@ -107,7 +114,7 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (expensesData) {
       setExpenses(
-        expensesData.map((expense: Expense) => ({
+        expensesData.map((expense) => ({
           ...expense,
           categoryId: expense.categoryId || undefined,
           paidById: expense.paidById || undefined,
@@ -218,14 +225,19 @@ export default function ExpensesPage() {
             <div className="px-4 lg:px-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Expense management</CardTitle>
-                  <CardDescription>Here you can manage your expenses.</CardDescription>
-                  <CardAction>
-                    <Button variant="outline" size="sm" onClick={handleCreateExpense}>
-                      <IconPlus className="mr-2 h-4 w-4" />
-                      Add expense
-                    </Button>
-                  </CardAction>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle>Expense management</CardTitle>
+                      <CardDescription>Here you can manage your expenses.</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <DateRangeFilter />
+                      <Button variant="outline" size="sm" onClick={handleCreateExpense}>
+                        <IconPlus className="mr-2 h-4 w-4" />
+                        Add expense
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <DataTable
