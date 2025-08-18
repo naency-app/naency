@@ -6,8 +6,11 @@ import { db } from '../db';
 import { publicProcedure, router } from '../trpc';
 
 export const categoriesRouter = router({
-  getAll: publicProcedure.query(async () => {
-    return await db.select().from(categories);
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.userId) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+    return await db.select().from(categories).where(eq(categories.userId, ctx.userId));
   }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
@@ -26,13 +29,12 @@ export const categoriesRouter = router({
       if (!ctx.userId) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
-      // Implementar lógica de criação
       const result = await db
         .insert(categories)
         .values({
           name: input.name,
           color: input.color,
-          userId: ctx.userId!,
+          userId: ctx.userId,
         })
         .returning();
 

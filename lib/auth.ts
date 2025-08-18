@@ -5,6 +5,7 @@ import { nextCookies } from 'better-auth/next-js';
 import { jwt } from 'better-auth/plugins';
 import { db } from '@/db/drizzle';
 import * as schema from '@/db/schema';
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: 'pg', schema }),
   emailAndPassword: {
@@ -34,6 +35,11 @@ export const auth = betterAuth({
   },
   onError: (error: unknown) => {
     console.error('Better Auth Error:', error);
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
   },
   // Add development-specific settings
   ...(process.env.NODE_ENV === 'development' && {

@@ -35,7 +35,7 @@ export const paidByRouter = router({
         .insert(paidBy)
         .values({
           name: input.name,
-          userId: ctx.userId!,
+          userId: ctx.userId,
         })
         .returning();
 

@@ -44,7 +44,7 @@ export default function ExpensesPage() {
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
-  const { data: expensesData, isLoading, error } = trpc.expenses.getAll.useQuery();
+  const { data: expensesData } = trpc.expenses.getAll.useQuery();
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const { data: paidByData } = trpc.paidBy.getAll.useQuery();
   const utils = trpc.useUtils();
@@ -107,7 +107,7 @@ export default function ExpensesPage() {
   useEffect(() => {
     if (expensesData) {
       setExpenses(
-        expensesData.map((expense) => ({
+        expensesData.map((expense: Expense) => ({
           ...expense,
           categoryId: expense.categoryId || undefined,
           paidById: expense.paidById || undefined,

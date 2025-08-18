@@ -43,7 +43,7 @@ export const expensesRouter = router({
     const [row] = await db
       .insert(expenses)
       .values({
-        userId: ctx.userId!,
+        userId: ctx.userId,
         name: input.name,
         amount: input.amount,
         categoryId: input.categoryId ?? null,
@@ -69,7 +69,7 @@ export const expensesRouter = router({
           paidAt: input.paidAt ?? null,
           paidById: input.paidById ?? null,
         })
-        .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId!)))
+        .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId)))
         .returning();
       return row;
     }),
@@ -82,7 +82,7 @@ export const expensesRouter = router({
       }
       await db
         .delete(expenses)
-        .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId!)));
+        .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId)));
       return { success: true };
     }),
 
@@ -94,7 +94,7 @@ export const expensesRouter = router({
       }
       await db
         .delete(expenses)
-        .where(and(inArray(expenses.id, input.ids), eq(expenses.userId, ctx.userId!)));
+        .where(and(inArray(expenses.id, input.ids), eq(expenses.userId, ctx.userId)));
       return { success: true };
     }),
 });
