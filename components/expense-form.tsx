@@ -54,7 +54,6 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({
   expense,
-  categories,
   onSubmit,
   onCancel,
   isLoading = false,

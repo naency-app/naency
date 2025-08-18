@@ -95,28 +95,50 @@ function DataTableRow<TData>({
   row,
   columns,
   enableDragAndDrop = false,
+  onRowClick,
 }: {
   row: Row<TData>;
   columns: ColumnDef<TData>[];
   enableDragAndDrop?: boolean;
+  onRowClick?: (row: Row<TData>) => void;
 }) {
   const sortableProps = useSortable({ id: row.id });
   const { transform, transition, setNodeRef, isDragging } = enableDragAndDrop ? sortableProps : {};
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Don't trigger row click if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('[role="button"]') ||
+      target.closest('[data-radix-collection-item]')
+    ) {
+      return;
+    }
+
+    if (onRowClick) {
+      onRowClick(row);
+    }
+  };
 
   return (
     <TableRow
       data-state={row.getIsSelected() && 'selected'}
       data-dragging={isDragging}
       ref={enableDragAndDrop ? setNodeRef : undefined}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className={`relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 ${onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''
+        }`}
       style={
         enableDragAndDrop && transform
           ? {
-              transform: CSS.Transform.toString(transform),
-              transition: transition,
-            }
+            transform: CSS.Transform.toString(transform),
+            transition: transition,
+          }
           : undefined
       }
+      onClick={onRowClick ? handleRowClick : undefined}
     >
       {row.getVisibleCells().map((cell) => (
         <TableCell key={cell.id}>
@@ -138,6 +160,7 @@ export interface DataTableProps<TData> {
   searchPlaceholder?: string;
   onDataChange?: (data: TData[]) => void;
   onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  onRowClick?: (row: Row<TData>) => void;
   className?: string;
   showToolbar?: boolean;
   toolbarActions?: React.ReactNode;
@@ -157,6 +180,7 @@ export function DataTable<TData>({
   searchPlaceholder = 'Search...',
   onDataChange,
   onRowSelectionChange,
+  onRowClick,
   className = '',
   showToolbar = true,
   toolbarActions,
@@ -178,6 +202,7 @@ export function DataTable<TData>({
   const [globalFilter, setGlobalFilter] = React.useState('');
 
   const sortableId = React.useId();
+  const rowsPerPageId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
@@ -394,6 +419,7 @@ export function DataTable<TData>({
                         row={row}
                         columns={finalColumns}
                         enableDragAndDrop={enableDragAndDrop}
+                        onRowClick={onRowClick}
                       />
                     ))}
                   </SortableContext>
@@ -432,6 +458,7 @@ export function DataTable<TData>({
                     row={row}
                     columns={finalColumns}
                     enableDragAndDrop={false}
+                    onRowClick={onRowClick}
                   />
                 ))
               ) : (
@@ -454,7 +481,7 @@ export function DataTable<TData>({
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
+              <Label htmlFor={rowsPerPageId} className="text-sm font-medium">
                 Rows per page
               </Label>
               <Select
@@ -463,7 +490,7 @@ export function DataTable<TData>({
                   table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+                <SelectTrigger size="sm" className="w-20" id={rowsPerPageId}>
                   <SelectValue placeholder={table.getState().pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">

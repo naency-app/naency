@@ -58,13 +58,9 @@ export const expenseColumns = ({
       accessorKey: 'name',
       header: 'Description',
       cell: ({ row }) => (
-        <Button
-          variant="link"
-          className="font-medium cursor-pointer hover:text-primary transition-colors"
-          onClick={() => handleViewExpense(row.original)}
-        >
+        <div className="font-medium text-black dark:text-white">
           {row.getValue('name')}
-        </Button>
+        </div>
       ),
     },
     {

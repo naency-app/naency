@@ -275,6 +275,7 @@ export default function ExpensesPage() {
                     emptyMessage="No expenses found."
                     onDataChange={handleExpenseDataChange}
                     onRowSelectionChange={handleExpenseSelectionChange}
+                    onRowClick={(row) => handleViewExpense(row.original)}
                   />
                 </CardContent>
               </Card>
@@ -291,7 +292,7 @@ export default function ExpensesPage() {
       >
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>{editingExpense ? 'Edit Expense' : 'New Expense'}</DrawerTitle>
+            <DrawerTitle>{editingExpense ? 'Edit expense' : 'Create new expense'}</DrawerTitle>
             <DrawerDescription>
               {editingExpense
                 ? 'Update the information for the selected expense.'
@@ -333,7 +334,7 @@ export default function ExpensesPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteExpense}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
@@ -354,7 +355,7 @@ export default function ExpensesPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete {selectedExpensesCount}
             </AlertDialogAction>
