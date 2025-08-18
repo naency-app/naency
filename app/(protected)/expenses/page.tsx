@@ -3,6 +3,7 @@
 import { IconPlus, IconTrash } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { CreateFormsWrapper } from '@/components/create-forms-wrapper';
 import { DataTable } from '@/components/data-table';
 import DateRangeFilter from '@/components/date-range-filter';
 import { ExpenseForm } from '@/components/expense-form';
@@ -231,6 +232,12 @@ export default function ExpensesPage() {
                       <CardDescription>Here you can manage your expenses.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                      <CreateFormsWrapper
+                        onSuccess={() => {
+                          utils.categories.getAll.invalidate();
+                          utils.paidBy.getAll.invalidate();
+                        }}
+                      />
                       <Button variant="outline" size="sm" onClick={handleCreateExpense}>
                         <IconPlus className="mr-2 h-4 w-4" />
                         Add expense
@@ -250,7 +257,7 @@ export default function ExpensesPage() {
                     })}
                     enableDragAndDrop={true}
                     enableSearch={true}
-                    searchPlaceholder="Search expenses..."
+                    searchPlaceholder="Search"
                     enableRowSelection={true}
                     enablePagination={true}
                     enableColumnVisibility={true}

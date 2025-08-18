@@ -6,8 +6,11 @@ import { db } from '../db';
 import { publicProcedure, router } from '../trpc';
 
 export const paidByRouter = router({
-  getAll: publicProcedure.query(async () => {
-    return await db.select().from(paidBy);
+  getAll: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.userId) {
+      throw new TRPCError({ code: 'UNAUTHORIZED' });
+    }
+    return await db.select().from(paidBy).where(eq(paidBy.userId, ctx.userId));
   }),
 
   getById: publicProcedure

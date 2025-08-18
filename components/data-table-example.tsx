@@ -90,19 +90,19 @@ const userColumns: ColumnDef<User>[] = [
   },
   {
     id: 'actions',
-    header: 'Ações',
+    header: 'Actions',
     cell: ({ row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
             <IconDotsVertical className="h-4 w-4" />
-            <span className="sr-only">Abrir menu</span>
+            <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-          <DropdownMenuItem>Editar</DropdownMenuItem>
-          <DropdownMenuItem>Excluir</DropdownMenuItem>
+          <DropdownMenuItem>View details</DropdownMenuItem>
+          <DropdownMenuItem>Edit</DropdownMenuItem>
+          <DropdownMenuItem>Delete</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     ),

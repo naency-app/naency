@@ -58,12 +58,13 @@ export const expenseColumns = ({
       accessorKey: 'name',
       header: 'Description',
       cell: ({ row }) => (
-        <div
+        <Button
+          variant="link"
           className="font-medium cursor-pointer hover:text-primary transition-colors"
           onClick={() => handleViewExpense(row.original)}
         >
           {row.getValue('name')}
-        </div>
+        </Button>
       ),
     },
     {
@@ -89,7 +90,7 @@ export const expenseColumns = ({
 
     {
       id: 'actions',
-      header: 'Ações',
+      header: 'Actions',
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
