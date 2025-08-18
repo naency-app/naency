@@ -3,14 +3,11 @@
 import {
   endOfDay,
   endOfMonth,
-  endOfYear,
   format,
   startOfDay,
   startOfMonth,
-  startOfYear,
   subDays,
   subMonths,
-  subYears,
 } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { useState } from 'react';
@@ -19,9 +16,15 @@ import type { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useDateStore } from '@/lib/date-store';
 import { cn } from '@/lib/utils';
-
 
 export default function DatePicker() {
   const { dateRange, setDateRange } = useDateStore();
@@ -46,14 +49,24 @@ export default function DatePicker() {
     from: startOfMonth(subMonths(today, 1)),
     to: endOfMonth(subMonths(today, 1)),
   };
-  const yearToDate = {
-    from: startOfYear(today),
-    to: today,
+  // Generate months for dropdown (current month to 12 months ago)
+  const generateMonthOptions = () => {
+    const months = [];
+    for (let i = 0; i <= 12; i++) {
+      const date = subMonths(today, i);
+      const monthStart = startOfMonth(date);
+      const monthEnd = endOfMonth(date);
+
+      months.push({
+        label: format(date, 'MMMM yyyy'),
+        value: { from: monthStart, to: monthEnd },
+        date: date,
+      });
+    }
+    return months;
   };
-  const lastYear = {
-    from: startOfYear(subYears(today, 1)),
-    to: endOfYear(subYears(today, 1)),
-  };
+
+  const monthOptions = generateMonthOptions();
   const [month, setMonth] = useState(today);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -87,34 +100,61 @@ export default function DatePicker() {
     const currentFromTime = fromDate.getTime();
     const currentToTime = toDate.getTime();
 
+    // Check exact matches first
     if (currentFromTime === preset.from.getTime() && currentToTime === preset.to.getTime()) {
       return true;
     }
 
-    const daysDiff = Math.ceil((currentToTime - currentFromTime) / (1000 * 60 * 60 * 24));
-
-    if (daysDiff === 6 && preset.from.getTime() === last7Days.from.getTime() && preset.to.getTime() === last7Days.to.getTime()) {
-      return true;
+    // Check if it's "Last 7 days" (6 days difference)
+    if (preset === last7Days) {
+      const daysDiff = Math.ceil((currentToTime - currentFromTime) / (1000 * 60 * 60 * 24));
+      return daysDiff === 6;
     }
 
-    if (daysDiff === 29 && preset.from.getTime() === last30Days.from.getTime() && preset.to.getTime() === last30Days.to.getTime()) {
-      return true;
+    // Check if it's "Last 30 days" (29 days difference)
+    if (preset === last30Days) {
+      const daysDiff = Math.ceil((currentToTime - currentFromTime) / (1000 * 60 * 60 * 24));
+      return daysDiff === 29;
     }
 
-    if (currentFromTime === currentToTime &&
-      currentFromTime >= startOfDay(today).getTime() &&
-      currentFromTime <= endOfDay(today).getTime() &&
-      preset.from.getTime() === today.getTime() &&
-      preset.to.getTime() === today.getTime()) {
-      return true;
+    // Check if it's "Today" (same day)
+    if (preset.from.getTime() === today.getTime() && preset.to.getTime() === today.getTime()) {
+      return currentFromTime === currentToTime &&
+        currentFromTime >= startOfDay(today).getTime() &&
+        currentFromTime <= endOfDay(today).getTime();
     }
 
-    if (currentFromTime === currentToTime &&
-      preset.from.getTime() === yesterday.from.getTime() &&
-      preset.to.getTime() === yesterday.to.getTime()) {
-      const yesterdayStart = startOfDay(yesterday.from).getTime();
-      const yesterdayEnd = endOfDay(yesterday.from).getTime();
-      return currentFromTime >= yesterdayStart && currentFromTime <= yesterdayEnd;
+    // Check if it's "Yesterday" (same day, previous day)
+    if (preset === yesterday) {
+      if (currentFromTime === currentToTime) {
+        const yesterdayStart = startOfDay(yesterday.from).getTime();
+        const yesterdayEnd = endOfDay(yesterday.from).getTime();
+        return currentFromTime >= yesterdayStart && currentFromTime <= yesterdayEnd;
+      }
+      return false;
+    }
+
+    // Check if it's "Month to date"
+    if (preset === monthToDate) {
+      return currentFromTime === startOfMonth(today).getTime() &&
+        currentToTime === today.getTime();
+    }
+
+    // Check if it's "Last month"
+    if (preset === lastMonth) {
+      return currentFromTime === startOfMonth(subMonths(today, 1)).getTime() &&
+        currentToTime === endOfMonth(subMonths(today, 1)).getTime();
+    }
+
+    // Check if it's a month selection from dropdown
+    const monthOptions = generateMonthOptions();
+    const isMonthOption = monthOptions.some(
+      (option) =>
+        option.value.from.getTime() === preset.from?.getTime() &&
+        option.value.to.getTime() === preset.to?.getTime()
+    );
+    if (isMonthOption) {
+      return true;
     }
 
     return false;
@@ -155,96 +195,114 @@ export default function DatePicker() {
                 <div className="h-full sm:border-e">
                   <div className="flex flex-col px-2">
                     <Button
-                      variant={isPresetActive({ from: today, to: today }) ? "default" : "ghost"}
+                      variant={isPresetActive({ from: today, to: today }) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive({ from: today, to: today }) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive({ from: today, to: today }) &&
+                        'bg-primary text-primary-foreground'
                       )}
-                      onClick={() => handlePresetSelect({
-                        from: today,
-                        to: today,
-                      })}
+                      onClick={() =>
+                        handlePresetSelect({
+                          from: today,
+                          to: today,
+                        })
+                      }
                     >
                       Today
                     </Button>
                     <Button
-                      variant={isPresetActive(yesterday) ? "default" : "ghost"}
+                      variant={isPresetActive(yesterday) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive(yesterday) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive(yesterday) && 'bg-primary text-primary-foreground'
                       )}
                       onClick={() => handlePresetSelect(yesterday)}
                     >
                       Yesterday
                     </Button>
                     <Button
-                      variant={isPresetActive(last7Days) ? "default" : "ghost"}
+                      variant={isPresetActive(last7Days) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive(last7Days) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive(last7Days) && 'bg-primary text-primary-foreground'
                       )}
                       onClick={() => handlePresetSelect(last7Days)}
                     >
                       Last 7 days
                     </Button>
                     <Button
-                      variant={isPresetActive(last30Days) ? "default" : "ghost"}
+                      variant={isPresetActive(last30Days) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive(last30Days) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive(last30Days) && 'bg-primary text-primary-foreground'
                       )}
                       onClick={() => handlePresetSelect(last30Days)}
                     >
                       Last 30 days
                     </Button>
                     <Button
-                      variant={isPresetActive(monthToDate) ? "default" : "ghost"}
+                      variant={isPresetActive(monthToDate) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive(monthToDate) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive(monthToDate) && 'bg-primary text-primary-foreground'
                       )}
                       onClick={() => handlePresetSelect(monthToDate)}
                     >
                       Month to date
                     </Button>
                     <Button
-                      variant={isPresetActive(lastMonth) ? "default" : "ghost"}
+                      variant={isPresetActive(lastMonth) ? 'default' : 'ghost'}
                       size="sm"
                       className={cn(
-                        "w-full justify-start",
-                        isPresetActive(lastMonth) && "bg-primary text-primary-foreground"
+                        'w-full justify-start',
+                        isPresetActive(lastMonth) && 'bg-primary text-primary-foreground'
                       )}
                       onClick={() => handlePresetSelect(lastMonth)}
                     >
                       Last month
                     </Button>
-                    <Button
-                      variant={isPresetActive(yearToDate) ? "default" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "w-full justify-start",
-                        isPresetActive(yearToDate) && "bg-primary text-primary-foreground"
-                      )}
-                      onClick={() => handlePresetSelect(yearToDate)}
-                    >
-                      Year to date
-                    </Button>
-                    <Button
-                      variant={isPresetActive(lastYear) ? "default" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "w-full justify-start",
-                        isPresetActive(lastYear) && "bg-primary text-primary-foreground"
-                      )}
-                      onClick={() => handlePresetSelect(lastYear)}
-                    >
-                      Last year
-                    </Button>
+                    <div className="px-2 py-1">
+                      <Select
+                        value={(() => {
+                          // Find the month option that matches the current calendar month
+                          const currentMonthOption = monthOptions.find((option) => {
+                            const optionMonth = option.date.getMonth();
+                            const optionYear = option.date.getFullYear();
+                            const currentMonth = month.getMonth();
+                            const currentYear = month.getFullYear();
+                            return optionMonth === currentMonth && optionYear === currentYear;
+                          });
+                          return currentMonthOption ? currentMonthOption.date.getTime().toString() : '';
+                        })()}
+                        onValueChange={(value: string) => {
+                          const selectedMonth = monthOptions.find(
+                            (option) => option.date.getTime().toString() === value
+                          );
+                          if (selectedMonth) {
+                            handlePresetSelect(selectedMonth.value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {monthOptions.map((option) => (
+                            <SelectItem
+                              key={`${option.date.getTime()}`}
+                              value={option.date.getTime().toString()}
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
