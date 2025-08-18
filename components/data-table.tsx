@@ -279,7 +279,12 @@ export function DataTable<TData>({
       pagination,
       globalFilter,
     },
-    getRowId: (_row, index) => `row-${index}`,
+    getRowId: (row) => {
+      if (row && typeof row === 'object' && 'id' in row) {
+        return String(row.id);
+      }
+      return `row-${Math.random().toString(36).substr(2, 9)}`;
+    },
     enableRowSelection,
     onRowSelectionChange: (updater) => {
       const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;

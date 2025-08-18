@@ -95,20 +95,29 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
 
               <div className="space-y-2">
                 <Label htmlFor={categoryColorId}>Color</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id={categoryColorId}
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="w-16 h-10 p-1"
-                    disabled={createCategory.isPending}
-                  />
+                <div className="flex items-center gap-3">
+                  <label
+                    htmlFor={categoryColorId}
+                    className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center cursor-pointer transition-all"
+                    style={{ backgroundColor: color }}
+                  >
+                    <input
+                      id={categoryColorId}
+                      type="color"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      disabled={createCategory.isPending}
+                      className="opacity-0 w-8 h-8 cursor-pointer shrink-0"
+                      tabIndex={-1}
+                      style={{ position: 'absolute', pointerEvents: 'none' }}
+                    />
+                  </label>
                   <Input
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
                     placeholder="#3b82f6"
                     disabled={createCategory.isPending}
+                    className="flex-1"
                   />
                 </div>
               </div>

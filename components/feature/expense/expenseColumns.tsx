@@ -48,7 +48,7 @@ export const expenseColumns = ({
       cell: ({ row }) => {
         const amount = row.getValue('amount') as number;
         return (
-          <div className="font-mono font-semibold text-red-600 dark:text-red-400">
+          <div className="font-mono font-semibold text-destructive">
             {formatCentsBRL(amount)}
           </div>
         );
