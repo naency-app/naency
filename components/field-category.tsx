@@ -45,7 +45,6 @@ export function FieldCategory<T extends FieldValues>({
                   options={categoryOptions}
                   value={field.value || ''}
                   onValueChange={(value) => {
-                    // Se value for undefined, define como null para o RHF (para campos opcionais)
                     field.onChange(value || null);
                     trigger(name);
                   }}
