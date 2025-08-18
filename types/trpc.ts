@@ -22,6 +22,7 @@ export type Expense = {
   amount: number;
   categoryId?: string;
   paidById?: string;
+  transactionAccountId?: string;
   paidAt?: Date;
   createdAt?: Date;
 };

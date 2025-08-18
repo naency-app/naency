@@ -135,15 +135,28 @@ export const expenses = pgTable(
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
     paidAt: timestamp('paid_at', { withTimezone: true, mode: 'date' }),
     paidById: uuid('paid_by_id').references(() => paidBy.id, { onDelete: 'set null' }),
+    transactionAccountId: uuid('transaction_account_id').references(() => transactionAccounts.id, {
+      onDelete: 'set null',
+    }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (t) => ({
     userIdIdx: index('expenses_user_id_idx').on(t.userId),
     categoryIdx: index('expenses_category_id_idx').on(t.categoryId),
     paidByIdIdx: index('expenses_paid_by_id_idx').on(t.paidById),
+    transactionAccountIdx: index('expenses_transaction_account_id_idx').on(t.transactionAccountId),
     nonNegativeAmount: check('expenses_amount_non_negative', sql`${t.amount} >= 0`),
   })
 );
+
+export const transactionAccounts = pgTable('transaction_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 255 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+});
 
 // Importante: use `sql` do drizzle-orm se ainda não estiver importado
 import { sql } from 'drizzle-orm';

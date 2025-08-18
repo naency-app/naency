@@ -11,6 +11,7 @@ const baseExpense = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   paidAt: z.coerce.date().optional().nullable(),
   paidById: z.string().uuid().optional().nullable(),
+  transactionAccountId: z.string().uuid().optional().nullable(),
 });
 
 const dateRangeFilter = z.object({
@@ -87,6 +88,7 @@ export const expensesRouter = router({
         categoryId: input.categoryId ?? null,
         paidAt: input.paidAt ?? null,
         paidById: input.paidById ?? null,
+        transactionAccountId: input.transactionAccountId ?? null,
       })
       .returning();
     return row;
@@ -106,6 +108,7 @@ export const expensesRouter = router({
           categoryId: input.categoryId ?? null,
           paidAt: input.paidAt ?? null,
           paidById: input.paidById ?? null,
+          transactionAccountId: input.transactionAccountId ?? null,
         })
         .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId)))
         .returning();

@@ -55,6 +55,7 @@ export default function ExpensesPage() {
   });
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const { data: paidByData } = trpc.paidBy.getAll.useQuery();
+  const { data: transactionAccountsData } = trpc.transactionAccount.getAll.useQuery();
   const utils = trpc.useUtils();
 
   const createExpense = trpc.expenses.create.useMutation({
@@ -119,6 +120,7 @@ export default function ExpensesPage() {
           ...expense,
           categoryId: expense.categoryId || undefined,
           paidById: expense.paidById || undefined,
+          transactionAccountId: expense.transactionAccountId || undefined,
           paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
           createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined,
         }))
@@ -146,6 +148,12 @@ export default function ExpensesPage() {
     if (!paidById || !paidByData) return null;
     const paidBy = paidByData.find((paidBy) => paidBy.id === paidById);
     return paidBy?.name || null;
+  };
+
+  const getTransactionAccountName = (transactionAccountId: string | null | undefined) => {
+    if (!transactionAccountId || !transactionAccountsData) return null;
+    const transactionAccount = transactionAccountsData.find((account) => account.id === transactionAccountId);
+    return transactionAccount?.name || null;
   };
 
   const handleCreateExpense = () => {
@@ -190,6 +198,7 @@ export default function ExpensesPage() {
     amount: number;
     categoryId?: string | null;
     paidById?: string | null;
+    transactionAccountId?: string | null;
     paidAt?: Date;
   }) => {
     if (editingExpense) {
@@ -199,6 +208,7 @@ export default function ExpensesPage() {
         amount: data.amount,
         categoryId: data.categoryId || undefined,
         paidById: data.paidById || undefined,
+        transactionAccountId: data.transactionAccountId || undefined,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     } else {
@@ -207,6 +217,7 @@ export default function ExpensesPage() {
         amount: data.amount,
         categoryId: data.categoryId || undefined,
         paidById: data.paidById || undefined,
+        transactionAccountId: data.transactionAccountId || undefined,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     }
@@ -254,6 +265,7 @@ export default function ExpensesPage() {
                       handleDeleteExpense,
                       getPaidByName,
                       getCategoryName,
+                      getTransactionAccountName,
                     })}
                     enableDragAndDrop={true}
                     enableSearch={true}
@@ -312,6 +324,7 @@ export default function ExpensesPage() {
                   ...paidBy,
                   createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined,
                 }))}
+
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createExpense.isPending || updateExpense.isPending}

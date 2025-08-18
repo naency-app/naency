@@ -24,12 +24,14 @@ import { cn } from '@/lib/utils';
 import type { Category, Expense } from '@/types/trpc';
 import { FieldCategory } from './field-category';
 import { FieldPaidBy } from './field-paid-by';
+import { FieldTransactionAccount } from './field-transaction-account';
 
 const expenseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   amount: z.number().min(1, 'Amount is required'), // Agora aceita valores como 589734 (centavos)
   categoryId: z.string().uuid().nullable().optional(),
   paidById: z.string().uuid().nullable().optional(),
+  transactionAccountId: z.string().uuid().nullable().optional(),
   paidAt: z.string().optional(),
 });
 
@@ -40,6 +42,7 @@ type ProcessedExpenseData = {
   amount: number;
   categoryId?: string | null;
   paidById?: string | null;
+  transactionAccountId?: string | null;
   paidAt?: Date;
 };
 
@@ -54,6 +57,8 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({
   expense,
+  categories,
+  paidBy,
   onSubmit,
   onCancel,
   isLoading = false,
@@ -69,6 +74,7 @@ export function ExpenseForm({
       amount: expense?.amount ?? 0,
       categoryId: expense?.categoryId ?? null,
       paidById: expense?.paidById ?? null,
+      transactionAccountId: expense?.transactionAccountId ?? null,
       paidAt: expense?.paidAt ? expense.paidAt.toISOString() : undefined,
     },
     mode: 'onChange',
@@ -86,6 +92,7 @@ export function ExpenseForm({
       amount: data.amount,
       categoryId: data.categoryId || undefined,
       paidById: data.paidById || undefined,
+      transactionAccountId: data.transactionAccountId || undefined,
       paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
     };
 
@@ -137,6 +144,8 @@ export function ExpenseForm({
         <FieldCategory<ExpenseFormData> name="categoryId" />
 
         <FieldPaidBy<ExpenseFormData> name="paidById" />
+
+        <FieldTransactionAccount<ExpenseFormData> name="transactionAccountId" />
 
         <FormField
           control={form.control}

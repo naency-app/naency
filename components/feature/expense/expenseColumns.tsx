@@ -19,6 +19,7 @@ export const expenseColumns = ({
   handleDeleteExpense,
   getPaidByName,
   getCategoryName,
+  getTransactionAccountName,
 }: {
   handleViewExpense: (expense: Expense) => void;
   handleEditExpense: (expense: Expense) => void;
@@ -27,6 +28,7 @@ export const expenseColumns = ({
   getCategoryName: (
     categoryId: string | null | undefined
   ) => { name: string; color: string } | null;
+  getTransactionAccountName: (transactionAccountId: string | null | undefined) => string | null;
 }): ColumnDef<Expense>[] => {
   return [
     {
@@ -81,6 +83,16 @@ export const expenseColumns = ({
         const category = getCategoryName(categoryId);
         if (!category) return '-';
         return <CategoryBadge color={category.color} name={category.name} />;
+      },
+    },
+    {
+      accessorKey: 'transactionAccountId',
+      header: 'Transaction Account',
+      cell: ({ row }) => {
+        const transactionAccountId = row.getValue('transactionAccountId') as string | null | undefined;
+        const transactionAccount = getTransactionAccountName(transactionAccountId);
+        if (!transactionAccount) return '-';
+        return <Badge variant="outline">{transactionAccount}</Badge>;
       },
     },
 

@@ -8,4 +8,5 @@ export { DataTable } from './data-table';
 export { DataTableExpense } from './data-table-expense';
 // Forms
 export { ExpenseForm } from './expense-form';
+export { FieldTransactionAccount } from './field-transaction-account';
 export { LoginForm } from './login-form';
