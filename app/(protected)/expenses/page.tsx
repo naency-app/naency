@@ -231,7 +231,6 @@ export default function ExpensesPage() {
                       <CardDescription>Here you can manage your expenses.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                      <DateRangeFilter />
                       <Button variant="outline" size="sm" onClick={handleCreateExpense}>
                         <IconPlus className="mr-2 h-4 w-4" />
                         Add expense
