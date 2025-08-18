@@ -1,5 +1,5 @@
-import { SignupForm } from "@/components/signup-form"
-import { IconTableFilled } from "@tabler/icons-react"
+import { IconTableFilled } from '@tabler/icons-react';
+import { SignupForm } from '@/components/signup-form';
 
 export default function SignupPage() {
   return (
@@ -27,5 +27,5 @@ export default function SignupPage() {
         />
       </div>
     </div>
-  )
-} 
+  );
+}

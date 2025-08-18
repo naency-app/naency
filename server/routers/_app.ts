@@ -1,8 +1,8 @@
 import { router } from '../trpc';
 import { categoriesRouter } from './categories';
-import { userRouter } from './user';
 import { expensesRouter } from './expense';
 import { paidByRouter } from './paid_by';
+import { userRouter } from './user';
 
 export const appRouter = router({
   user: userRouter,

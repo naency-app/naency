@@ -1,22 +1,16 @@
-"use client"
+'use client';
 
-import { useId, useState } from "react"
-import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-import { DateRange } from "react-day-picker"
-
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { format } from 'date-fns';
+import { CalendarIcon } from 'lucide-react';
+import { useId, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
 export default function DatePicker() {
-  const id = useId()
-  const [date, setDate] = useState<Date | undefined>(new Date())
+  const id = useId();
+  const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
     <div>
@@ -28,14 +22,8 @@ export default function DatePicker() {
               variant="outline"
               className="group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]"
             >
-              <span
-                className={cn("truncate", !date && "text-muted-foreground")}
-              >
-                {date ? (
-                  format(date, "LLL dd, y")
-                ) : (
-                  "Pick a date"
-                )}
+              <span className={cn('truncate', !date && 'text-muted-foreground')}>
+                {date ? format(date, 'LLL dd, y') : 'Pick a date'}
               </span>
               <CalendarIcon
                 size={16}
@@ -49,7 +37,6 @@ export default function DatePicker() {
           </PopoverContent>
         </Popover>
       </div>
-
     </div>
-  )
+  );
 }

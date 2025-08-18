@@ -1,20 +1,14 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { IconCalendar, IconChevronDown } from "@tabler/icons-react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { cn } from "@/lib/utils";
-import { type Category, type Expense } from "@/types/trpc";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { IconCalendar, IconChevronDown } from '@tabler/icons-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import {
   Form,
   FormControl,
@@ -22,14 +16,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { FieldCategory } from "./field-category";
-import { FieldPaidBy } from "./field-paid-by";
-import { formatCentsBRL, parseCurrencyToCents } from "@/helps/formatCurrency";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
+import { cn } from '@/lib/utils';
+import type { Category, Expense } from '@/types/trpc';
+import { FieldCategory } from './field-category';
+import { FieldPaidBy } from './field-paid-by';
 
 const expenseSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  amount: z.number().min(1, "Amount is required"), // Agora aceita valores como 589734 (centavos)
+  name: z.string().min(1, 'Name is required'),
+  amount: z.number().min(1, 'Amount is required'), // Agora aceita valores como 589734 (centavos)
   categoryId: z.string().uuid().nullable().optional(),
   paidById: z.string().uuid().nullable().optional(),
   paidAt: z.string().optional(),
@@ -59,7 +57,7 @@ export function ExpenseForm({
   categories,
   onSubmit,
   onCancel,
-  isLoading = false
+  isLoading = false,
 }: ExpenseFormProps) {
   const [date, setDate] = useState<Date | undefined>(
     expense?.paidAt ? new Date(expense.paidAt) : new Date()
@@ -68,18 +66,18 @@ export function ExpenseForm({
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
-      name: expense?.name ?? "",
+      name: expense?.name ?? '',
       amount: expense?.amount ?? 0,
       categoryId: expense?.categoryId ?? null,
       paidById: expense?.paidById ?? null,
       paidAt: expense?.paidAt ? expense.paidAt.toISOString() : undefined,
     },
-    mode: "onChange",
+    mode: 'onChange',
   });
 
   useEffect(() => {
     if (date) {
-      form.setValue("paidAt", date.toISOString());
+      form.setValue('paidAt', date.toISOString());
     }
   }, [date, form]);
 
@@ -95,7 +93,7 @@ export function ExpenseForm({
     try {
       await onSubmit(cleanedData);
     } catch (error) {
-      console.error("Error in form submission:", error);
+      console.error('Error in form submission:', error);
     }
   };
   console.log(form.formState.errors);
@@ -109,17 +107,12 @@ export function ExpenseForm({
             <FormItem>
               <FormLabel>Description *</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Enter expense description"
-                  {...field}
-                  disabled={isLoading}
-                />
+                <Input placeholder="Enter expense description" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
 
         <FormField
           control={form.control}
@@ -129,7 +122,6 @@ export function ExpenseForm({
               <FormLabel>Amount *</FormLabel>
               <FormControl>
                 <Input
-
                   value={formatCentsBRL(Number(field.value ?? 0))}
                   onChange={(e) => {
                     const cents = parseCurrencyToCents(e.target.value);
@@ -147,7 +139,6 @@ export function ExpenseForm({
 
         <FieldPaidBy<ExpenseFormData> name="paidById" />
 
-
         <FormField
           control={form.control}
           name="paidAt"
@@ -160,13 +151,13 @@ export function ExpenseForm({
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
+                        'w-full justify-start text-left font-normal',
+                        !date && 'text-muted-foreground'
                       )}
                       disabled={isLoading}
                     >
                       <IconCalendar className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP", { locale: ptBR }) : "Select a date"}
+                      {date ? format(date, 'PPP', { locale: ptBR }) : 'Select a date'}
                       <IconChevronDown className="ml-auto h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
@@ -202,7 +193,7 @@ export function ExpenseForm({
             className="flex-1"
             isLoading={isLoading}
           >
-            {expense ? "Update" : "Create"}
+            {expense ? 'Update' : 'Create'}
           </Button>
         </div>
       </form>

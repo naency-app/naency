@@ -1,7 +1,7 @@
 // src/server/trpc.ts
-import { initTRPC, TRPCError } from "@trpc/server";
-import { ZodError } from "zod";
-import { auth } from "@/lib/auth"; // ⬅️ seu instance do Better Auth
+import { initTRPC, TRPCError } from '@trpc/server';
+import { ZodError } from 'zod';
+import { auth } from '@/lib/auth'; // ⬅️ seu instance do Better Auth
 
 export type Context = {
   userId: string | null;
@@ -21,7 +21,10 @@ const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
-      data: { ...shape.data, zodError: error.cause instanceof ZodError ? error.cause.flatten() : null },
+      data: {
+        ...shape.data,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
+      },
     };
   },
 });
@@ -30,7 +33,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 const isAuthed = t.middleware(({ ctx, next }) => {
-  if (!ctx.userId) throw new TRPCError({ code: "UNAUTHORIZED" });
+  if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
   return next({ ctx });
 });
 

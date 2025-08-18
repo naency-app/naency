@@ -1,17 +1,12 @@
-"use client"
+'use client';
 
-import { trpc } from "@/lib/trpc";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
-import { toast } from "sonner";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle
-} from "@/components/ui/drawer";
+import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { DataTable } from '@/components/data-table';
+import { ExpenseForm } from '@/components/expense-form';
+import { ExpenseCards } from '@/components/feature/expense/expense-cards';
+import { expenseColumns } from '@/components/feature/expense/expenseColumns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,26 +16,26 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { type Expense } from "@/types/trpc";
-import { Badge, CategoryBadge } from "@/components/ui/badge";
-import { SectionCards } from "@/components/section-cards";
-import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/data-table";
-import { IconDotsVertical, IconDownload, IconPlus, IconTrash, IconCalendar, IconCategory, IconEdit, IconEye } from "@tabler/icons-react";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ExpenseForm } from "@/components/expense-form";
-import { useSidebar } from "@/components/ui/sidebar";
-import { formatCentsBRL, formatCurrency } from "@/helps/formatCurrency";
-import { expenseColumns } from "@/components/feature/expense/expenseColumns";
-import { ExpenseCards } from "@/components/feature/expense/expense-cards";
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { useSidebar } from '@/components/ui/sidebar';
+import { trpc } from '@/lib/trpc';
+import type { Expense } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -48,7 +43,7 @@ export default function ExpensesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const { isMobile } = useSidebar()
+  const { isMobile } = useSidebar();
   const { data: expensesData, isLoading, error } = trpc.expenses.getAll.useQuery();
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const { data: paidByData } = trpc.paidBy.getAll.useQuery();
@@ -56,7 +51,7 @@ export default function ExpensesPage() {
 
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: () => {
-      toast.success("Expense created successfully!");
+      toast.success('Expense created successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
@@ -69,7 +64,7 @@ export default function ExpensesPage() {
 
   const updateExpense = trpc.expenses.update.useMutation({
     onSuccess: () => {
-      toast.success("Expense updated successfully!");
+      toast.success('Expense updated successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
@@ -82,7 +77,7 @@ export default function ExpensesPage() {
 
   const deleteExpense = trpc.expenses.delete.useMutation({
     onSuccess: () => {
-      toast.success("Expense deleted successfully!");
+      toast.success('Expense deleted successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setDeleteDialogOpen(false);
@@ -106,44 +101,44 @@ export default function ExpensesPage() {
     },
   });
 
-
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({})
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (expensesData) {
-      setExpenses(expensesData.map(expense => ({
-        ...expense,
-        categoryId: expense.categoryId || undefined,
-        paidById: expense.paidById || undefined,
-        paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
-        createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined
-      })))
+      setExpenses(
+        expensesData.map((expense) => ({
+          ...expense,
+          categoryId: expense.categoryId || undefined,
+          paidById: expense.paidById || undefined,
+          paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
+          createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined,
+        }))
+      );
     }
-  }, [expensesData])
+  }, [expensesData]);
 
   const handleExpenseDataChange = (newData: Expense[]) => {
-    setExpenses(newData)
-  }
+    setExpenses(newData);
+  };
 
   const handleExpenseSelectionChange = (selection: Record<string, boolean>) => {
-    setSelectedExpenses(selection)
-  }
+    setSelectedExpenses(selection);
+  };
 
-  const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length
+  const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length;
 
   const getCategoryName = (categoryId: string | null | undefined) => {
-    if (!categoryId || !categoriesData) return null
-    const category = categoriesData.find(cat => cat.id === categoryId)
-    return { name: category?.name || "No category", color: category?.color || "#000" }
-  }
+    if (!categoryId || !categoriesData) return null;
+    const category = categoriesData.find((cat) => cat.id === categoryId);
+    return { name: category?.name || 'No category', color: category?.color || '#000' };
+  };
 
   const getPaidByName = (paidById: string | null | undefined) => {
-    if (!paidById || !paidByData) return null
-    const paidBy = paidByData.find(paidBy => paidBy.id === paidById)
-    return paidBy?.name || null
-  }
-
+    if (!paidById || !paidByData) return null;
+    const paidBy = paidByData.find((paidBy) => paidBy.id === paidById);
+    return paidBy?.name || null;
+  };
 
   const handleCreateExpense = () => {
     setEditingExpense(null);
@@ -176,13 +171,19 @@ export default function ExpensesPage() {
   };
 
   const confirmBulkDelete = async () => {
-    const selectedIds = Object.keys(selectedExpenses).filter(id => selectedExpenses[id]);
+    const selectedIds = Object.keys(selectedExpenses).filter((id) => selectedExpenses[id]);
     if (selectedIds.length > 0) {
       await deleteManyExpenses.mutateAsync({ ids: selectedIds });
     }
   };
 
-  const handleFormSubmit = async (data: { name: string; amount: number; categoryId?: string | null; paidById?: string | null; paidAt?: Date }) => {
+  const handleFormSubmit = async (data: {
+    name: string;
+    amount: number;
+    categoryId?: string | null;
+    paidById?: string | null;
+    paidAt?: Date;
+  }) => {
     if (editingExpense) {
       await updateExpense.mutateAsync({
         id: editingExpense.id,
@@ -208,10 +209,6 @@ export default function ExpensesPage() {
     setEditingExpense(null);
   };
 
-
-
-
-
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -222,9 +219,7 @@ export default function ExpensesPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Expense management</CardTitle>
-                  <CardDescription>
-                    Here you can manage your expenses.
-                  </CardDescription>
+                  <CardDescription>Here you can manage your expenses.</CardDescription>
                   <CardAction>
                     <Button variant="outline" size="sm" onClick={handleCreateExpense}>
                       <IconPlus className="mr-2 h-4 w-4" />
@@ -252,11 +247,7 @@ export default function ExpensesPage() {
                     toolbarActions={
                       <div className="flex items-center gap-2">
                         {selectedExpensesCount > 0 && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleBulkDelete}
-                          >
+                          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                             <IconTrash className="mr-2 h-4 w-4" />
                             Delete ({selectedExpensesCount})
                           </Button>
@@ -274,31 +265,33 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction={isMobile ? "bottom" : "right"} dismissible={false}>
+      <Drawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        direction={isMobile ? 'bottom' : 'right'}
+        dismissible={false}
+      >
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>
-              {editingExpense ? "Edit Expense" : "New Expense"}
-            </DrawerTitle>
+            <DrawerTitle>{editingExpense ? 'Edit Expense' : 'New Expense'}</DrawerTitle>
             <DrawerDescription>
               {editingExpense
-                ? "Update the information for the selected expense."
-                : "Fill in the information to create a new expense."
-              }
+                ? 'Update the information for the selected expense.'
+                : 'Fill in the information to create a new expense.'}
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
             {categoriesData && (
               <ExpenseForm
                 expense={editingExpense || undefined}
-                categories={categoriesData.map(cat => ({
+                categories={categoriesData.map((cat) => ({
                   ...cat,
                   color: cat.color || undefined,
-                  createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined
+                  createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined,
                 }))}
-                paidBy={paidByData?.map(paidBy => ({
+                paidBy={paidByData?.map((paidBy) => ({
                   ...paidBy,
-                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined
+                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined,
                 }))}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
@@ -314,8 +307,8 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the expense &quot;{expenseToDelete?.name}&quot;?
-              This action cannot be undone.
+              Are you sure you want to delete the expense &quot;{expenseToDelete?.name}&quot;? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -335,8 +328,8 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm bulk deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedExpensesCount} selected expenses?
-              This action cannot be undone.
+              Are you sure you want to delete {selectedExpensesCount} selected expenses? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -353,6 +346,3 @@ export default function ExpensesPage() {
     </>
   );
 }
-
-
-

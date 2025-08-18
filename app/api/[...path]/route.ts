@@ -2,9 +2,9 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { auth } from '@/lib/auth';
 import { headers as nextHeaders } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080';
 
@@ -86,7 +86,7 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
     const respHeaders = new Headers(resp.headers);
     // remova headers que bagunçam o streaming/compressão
     ['content-encoding', 'content-length', 'transfer-encoding', 'connection'].forEach((h) =>
-      respHeaders.delete(h),
+      respHeaders.delete(h)
     );
 
     return new NextResponse(resp.body, {

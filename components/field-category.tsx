@@ -1,10 +1,8 @@
-import { trpc } from "@/lib/trpc";
-import { InputWithSearch, type SelectOption } from "./ui/input-with-search";
-import {
-  FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from "./ui/form";
-import { Skeleton } from "./ui/skeleton";
-import { useFormContext, type FieldValues, type Path } from "react-hook-form";
+import { type FieldValues, type Path, useFormContext } from 'react-hook-form';
+import { trpc } from '@/lib/trpc';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { InputWithSearch, type SelectOption } from './ui/input-with-search';
+import { Skeleton } from './ui/skeleton';
 
 type Props<T extends FieldValues> = {
   name: Path<T>;
@@ -15,8 +13,8 @@ type Props<T extends FieldValues> = {
 
 export function FieldCategory<T extends FieldValues>({
   name,
-  label = "Category",
-  placeholder = "Category",
+  label = 'Category',
+  placeholder = 'Category',
   disabled,
 }: Props<T>) {
   const { control, trigger } = useFormContext<T>();
@@ -25,12 +23,13 @@ export function FieldCategory<T extends FieldValues>({
   if (isLoading) return <Skeleton className="h-10 w-full" />;
 
   // Transformar as categorias para o formato esperado pelo InputWithSearch
-  const categoryOptions: SelectOption[] = categories?.map((category) => ({
-    value: category.id,
-    label: category.name,
-    // Adicionar informações extras se necessário
-    ...(category.color && { color: category.color })
-  })) || [];
+  const categoryOptions: SelectOption[] =
+    categories?.map((category) => ({
+      value: category.id,
+      label: category.name,
+      // Adicionar informações extras se necessário
+      ...(category.color && { color: category.color }),
+    })) || [];
 
   return (
     <FormField
@@ -44,7 +43,7 @@ export function FieldCategory<T extends FieldValues>({
               <div className="flex items-center gap-2">
                 <InputWithSearch
                   options={categoryOptions}
-                  value={field.value || ""}
+                  value={field.value || ''}
                   onValueChange={(value) => {
                     // Se value for undefined, define como null para o RHF (para campos opcionais)
                     field.onChange(value || null);

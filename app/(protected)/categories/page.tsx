@@ -1,29 +1,28 @@
-"use client"
+'use client';
 
-import { DataTable } from "@/components/data-table";
-import { trpc } from "@/lib/trpc";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import staticData from "../dashboard/data.json";
-import { type Category } from "@/types/trpc";
-import { TRPCClientErrorLike } from "@trpc/client";
-import { Badge } from "@/components/ui/badge";
+import type { TRPCClientErrorLike } from '@trpc/client';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { DataTable } from '@/components/data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { trpc } from '@/lib/trpc';
+import staticData from '../dashboard/data.json';
 
 export default function CategoriesPage() {
-  const [name, setName] = useState("");
-  const [color, setColor] = useState("");
+  const [name, setName] = useState('');
+  const [color, setColor] = useState('');
 
   const { data: categories, isLoading, error } = trpc.categories.getAll.useQuery();
   const utils = trpc.useUtils();
 
   const createCategory = trpc.categories.create?.useMutation?.({
     onSuccess: () => {
-      toast.success("Categoria criada com sucesso!");
-      setName("");
-      setColor("");
+      toast.success('Categoria criada com sucesso!');
+      setName('');
+      setColor('');
       utils.categories.getAll.invalidate();
     },
     onError: (error: TRPCClientErrorLike<any>) => {
@@ -59,11 +58,8 @@ export default function CategoriesPage() {
               value={color}
               onChange={(e) => setColor(e.target.value)}
             />
-            <Button 
-              type="submit" 
-              disabled={createCategory?.isPending}
-            >
-              {createCategory?.isPending ? "Criando..." : "Criar"}
+            <Button type="submit" disabled={createCategory?.isPending}>
+              {createCategory?.isPending ? 'Criando...' : 'Criar'}
             </Button>
           </form>
         </CardContent>
@@ -80,7 +76,7 @@ export default function CategoriesPage() {
             <div className="text-red-600">Erro: {error.message}</div>
           ) : (
             <ul className="space-y-2">
-              {categories?.map((c) => ( 
+              {categories?.map((c) => (
                 <li key={c.id} className="flex items-center gap-2">
                   <Badge variant="outline" className="gap-1.5">
                     <span
@@ -92,7 +88,7 @@ export default function CategoriesPage() {
                   </Badge>
                 </li>
               ))}
-            </ul> 
+            </ul>
           )}
         </CardContent>
       </Card>

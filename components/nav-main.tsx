@@ -1,28 +1,27 @@
-"use client"
+'use client';
 
-import { IconCirclePlusFilled, IconMail, type Icon } from "@tabler/icons-react"
-import { usePathname } from "next/navigation"
-
-import { Button } from "@/components/ui/button"
+import { type Icon, IconCirclePlusFilled, IconMail } from '@tabler/icons-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
+} from '@/components/ui/sidebar';
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string
-    url: string
-    icon?: Icon
-  }[]
+    title: string;
+    url: string;
+    icon?: Icon;
+  }[];
 }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <SidebarGroup>
@@ -48,23 +47,23 @@ export function NavMain({
         </SidebarMenu>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = pathname === item.url
+            const isActive = pathname === item.url;
             return (
-              <Link key={item.title} href={item.url} className="cursor-pointer" >
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  tooltip={item.title}
-                  className={isActive ? "bg-accent text-accent-foreground" : ""}
-                >
-                  {item.icon && <item.icon />}
-                {item.title}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Link key={item.title} href={item.url} className="cursor-pointer">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    tooltip={item.title}
+                    className={isActive ? 'bg-accent text-accent-foreground' : ''}
+                  >
+                    {item.icon && <item.icon />}
+                    {item.title}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </Link>
-            )
+            );
           })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
-  )
+  );
 }

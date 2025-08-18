@@ -1,5 +1,5 @@
-import { LoginForm } from "@/components/login-form"
-import { IconTableFilled } from "@tabler/icons-react"
+import { IconTableFilled } from '@tabler/icons-react';
+import { LoginForm } from '@/components/login-form';
 
 export default function LoginPage() {
   return (
@@ -27,5 +27,5 @@ export default function LoginPage() {
         />
       </div>
     </div>
-  )
+  );
 }
