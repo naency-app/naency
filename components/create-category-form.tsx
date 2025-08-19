@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/drawer';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSidebar } from '@/components/ui/sidebar';
 import { trpc } from '@/lib/trpc';
 
@@ -24,18 +25,27 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState('#3b82f6');
+  const [parentId, setParentId] = useState<string>('no-parent'); // 👈 Estado inicial como "no-parent"
   const { isMobile } = useSidebar();
   const categoryNameId = useId();
   const categoryColorId = useId();
+  const categoryParentId = useId(); // 👈 Novo ID para o campo de categoria pai
 
   const utils = trpc.useUtils();
+
+  // 👈 Buscar categorias pai para o select
+  const { data: parentCategories = [] } = trpc.categories.getParentCategories.useQuery();
+
   const createCategory = trpc.categories.create.useMutation({
     onSuccess: () => {
       toast.success('Category created successfully!');
       utils.categories.getAll.invalidate();
+      utils.categories.getParentCategories.invalidate();
+      utils.categories.getHierarchical.invalidate();
       setIsOpen(false);
       setName('');
       setColor('#3b82f6');
+      setParentId('no-parent'); // 👈 Resetar para "no-parent"
       onSuccess?.();
     },
     onError: (error) => {
@@ -53,6 +63,7 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
     await createCategory.mutateAsync({
       name: name.trim(),
       color,
+      parentId: parentId === 'no-parent' ? undefined : (parentId || undefined), // 👈 Converter "no-parent" para undefined
     });
   };
 
@@ -60,6 +71,7 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
     setIsOpen(false);
     setName('');
     setColor('#3b82f6');
+    setParentId('no-parent'); // 👈 Resetar para "no-parent"
   };
 
   return (
@@ -91,6 +103,28 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
                   placeholder="Enter category name"
                   disabled={createCategory.isPending}
                 />
+              </div>
+
+              {/* 👈 Novo campo para selecionar categoria pai */}
+              <div className="space-y-2">
+                <Label htmlFor={categoryParentId}>Parent category (optional)</Label>
+                <Select
+                  value={parentId || undefined}
+                  onValueChange={(value) => setParentId(value || '')}
+                  disabled={createCategory.isPending}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a parent category (or leave empty for main category)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-parent">No parent (main category)</SelectItem>
+                    {parentCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

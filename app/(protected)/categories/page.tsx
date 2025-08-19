@@ -1,41 +1,55 @@
 'use client';
 
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import type { TRPCClientErrorLike } from '@trpc/client';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { DataTable } from '@/components/data-table';
+import { CreateCategoryForm } from '@/components/create-category-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { trpc } from '@/lib/trpc';
-import staticData from '../dashboard/data.json';
 
 export default function CategoriesPage() {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  const { data: categories, isLoading, error } = trpc.categories.getAll.useQuery();
+  const {
+    data: hierarchicalCategories,
+    isLoading,
+    error,
+  } = trpc.categories.getHierarchical.useQuery();
   const utils = trpc.useUtils();
 
-  const createCategory = trpc.categories.create?.useMutation?.({
-    onSuccess: () => {
-      toast.success('Categoria criada com sucesso!');
-      setName('');
-      setColor('');
-      utils.categories.getAll.invalidate();
-    },
-    onError: (error: TRPCClientErrorLike<any>) => {
-      toast.error(`Erro ao criar categoria: ${error.message}`);
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (createCategory?.mutate) {
-      createCategory.mutate({ name, color: color || undefined });
+  const toggleExpanded = (categoryId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
     }
+    setExpandedCategories(newExpanded);
   };
+
+  const handleCategoryCreated = () => {
+    utils.categories.getHierarchical.invalidate();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-lg">Carregando categorias...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <div className="text-red-600 text-lg">Erro ao carregar categorias: {error.message}</div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -44,56 +58,95 @@ export default function CategoriesPage() {
           <CardTitle>Criar Nova Categoria</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <Input
-              name="name"
-              placeholder="Nome da categoria"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-            <Input
-              name="color"
-              placeholder="Cor (opcional)"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-            />
-            <Button type="submit" disabled={createCategory?.isPending}>
-              {createCategory?.isPending ? 'Criando...' : 'Criar'}
-            </Button>
-          </form>
+          <CreateCategoryForm onSuccess={handleCategoryCreated} />
         </CardContent>
       </Card>
 
-      <Card className="mb-6">
+      <Card>
         <CardHeader>
-          <CardTitle>Lista de Categorias</CardTitle>
+          <CardTitle>Estrutura de Categorias</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="text-center py-4">Carregando...</div>
-          ) : error ? (
-            <div className="text-red-600">Erro: {error.message}</div>
-          ) : (
-            <ul className="space-y-2">
-              {categories?.map((c) => (
-                <li key={c.id} className="flex items-center gap-2">
-                  <Badge variant="outline" className="gap-1.5">
-                    <span
-                      className="size-1.5 rounded-full"
-                      style={c.color ? { backgroundColor: c.color } : { backgroundColor: '#000' }}
-                      aria-hidden="true"
-                    ></span>
-                    {c.name}
-                  </Badge>
-                </li>
+          {hierarchicalCategories && hierarchicalCategories.length > 0 ? (
+            <div className="space-y-3">
+              {hierarchicalCategories.map((category) => (
+                <div key={category.id} className="border rounded-lg p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="size-3 rounded-full"
+                        style={
+                          category.color
+                            ? { backgroundColor: category.color }
+                            : { backgroundColor: '#000' }
+                        }
+                        aria-hidden="true"
+                      />
+                      <span className="font-medium">{category.name}</span>
+                      {category.subcategories && category.subcategories.length > 0 && (
+                        <Badge variant="secondary" className="text-xs">
+                          {category.subcategories.length} subcategoria
+                          {category.subcategories.length !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {category.subcategories && category.subcategories.length > 0 && (
+                      <Collapsible
+                        open={expandedCategories.has(category.id)}
+                        onOpenChange={() => toggleExpanded(category.id)}
+                      >
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                            {expandedCategories.has(category.id) ? (
+                              <IconChevronDown className="h-4 w-4" />
+                            ) : (
+                              <IconChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </CollapsibleTrigger>
+                      </Collapsible>
+                    )}
+                  </div>
+
+                  {category.subcategories && category.subcategories.length > 0 && (
+                    <Collapsible open={expandedCategories.has(category.id)}>
+                      <CollapsibleContent className="mt-3 ml-6 space-y-2">
+                        {category.subcategories.map((subcategory) => (
+                          <div
+                            key={subcategory.id}
+                            className="flex items-center gap-2 pl-3 border-l-2 border-muted"
+                          >
+                            <span
+                              className="size-2 rounded-full"
+                              style={
+                                subcategory.color
+                                  ? { backgroundColor: subcategory.color }
+                                  : { backgroundColor: '#000' }
+                              }
+                              aria-hidden="true"
+                            />
+                            <span className="text-sm text-muted-foreground">
+                              {subcategory.name}
+                            </span>
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
+                  )}
+                </div>
               ))}
-            </ul>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <div className="text-lg">Nenhuma categoria encontrada</div>
+              <div className="text-sm">
+                Crie sua primeira categoria para começar a organizar suas despesas
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
-
-
     </>
   );
 }

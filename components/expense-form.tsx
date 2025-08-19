@@ -44,6 +44,7 @@ type ProcessedExpenseData = {
   paidById?: string | null;
   transactionAccountId?: string | null;
   paidAt?: Date;
+  parentCategoryId?: string | null;
 };
 
 interface ExpenseFormProps {

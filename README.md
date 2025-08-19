@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tabler - Sistema de Gestão Financeira
 
-## Getting Started
+## Funcionalidades
 
-First, run the development server:
+### Sistema de Categorias Hierárquicas
+
+O sistema agora suporta categorias hierárquicas, permitindo organizar suas despesas de forma mais estruturada:
+
+#### Exemplos de Uso:
+
+**Categoria Pai: Alimentação**
+- Subcategorias:
+  - Comida (supermercado)
+  - Almoço fora
+  - Jantar
+  - Delivery
+
+**Categoria Pai: Habitação**
+- Subcategorias:
+  - Aluguel
+  - Conta de luz
+  - Conta de água
+  - Internet
+
+**Categoria Pai: Transporte**
+- Subcategorias:
+  - Combustível
+  - Uber/Táxi
+  - Transporte público
+  - Manutenção
+
+#### Como Funciona:
+
+1. **Criar Categoria Pai**: Deixe o campo "Parent category" vazio
+2. **Criar Subcategoria**: Selecione uma categoria pai existente
+3. **Visualização Hierárquica**: As categorias são exibidas em estrutura de árvore
+4. **Seleção Inteligente**: Ao escolher categorias em formulários, você vê a hierarquia
+
+#### APIs Disponíveis:
+
+- `categories.getParentCategories` - Busca apenas categorias pai
+- `categories.getSubcategories` - Busca subcategorias de uma categoria específica
+- `categories.getHierarchical` - Busca toda a estrutura hierárquica
+- `categories.create` - Cria categoria com ou sem pai
+- `categories.update` - Atualiza categoria incluindo mudança de hierarquia
+
+## Tecnologias
+
+- Next.js 14
+- TypeScript
+- Drizzle ORM
+- tRPC
+- Tailwind CSS
+- Shadcn/ui
+
+## Instalação
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Estrutura do Banco
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+O sistema usa PostgreSQL com as seguintes tabelas principais:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `user` - Usuários do sistema
+- `categories` - Categorias com suporte a hierarquia (parentId)
+- `expenses` - Despesas
+- `paid_by` - Quem pagou
+- `transaction_accounts` - Contas de transação

@@ -97,14 +97,16 @@ export const categories = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     userId: text('user_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }), // 👈
+      .references(() => user.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 120 }).notNull(),
     color: varchar('color', { length: 24 }),
+    parentId: uuid('parent_id'), // 👈 Nova coluna para hierarquia (sem referência circular)
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdIdx: index('categories_user_id_idx').on(t.userId), // 👈
-    userNameUniq: uniqueIndex('categories_user_name_uidx').on(t.userId, t.name), // 👈 (único por usuário)
+    userIdIdx: index('categories_user_id_idx').on(t.userId),
+    userNameUniq: uniqueIndex('categories_user_name_uidx').on(t.userId, t.name),
+    parentIdIdx: index('categories_parent_id_idx').on(t.parentId),
   })
 );
 export const paidBy = pgTable(

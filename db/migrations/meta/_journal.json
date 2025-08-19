@@ -57,6 +57,13 @@
       "when": 1755554149255,
       "tag": "0007_lean_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1755555820604,
+      "tag": "0008_lumpy_trish_tilby",
+      "breakpoints": true
     }
   ]
 }

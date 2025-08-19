@@ -11,7 +11,7 @@ export function ExpenseCards() {
   const {
     data: totalExpenses,
     isLoading: isLoadingExpenses,
-    error: expensesError,
+    isError: isErrorExpenses,
   } = trpc.expenses.getTotal.useQuery({
     from: dateRange.from,
     to: dateRange.to,
@@ -29,7 +29,7 @@ export function ExpenseCards() {
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {isLoadingExpenses ? (
               <div className="h-8 w-24 animate-pulse bg-muted rounded" />
-            ) : expensesError ? (
+            ) : isErrorExpenses ? (
               <span className="text-destructive">---</span>
             ) : (
               formatCentsBRL(totalExpenses || 0)
