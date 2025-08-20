@@ -240,7 +240,7 @@ export default function ExpensesPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle>Expense management</CardTitle>
-                      <CardDescription>Here you can manage your expenses.</CardDescription>
+                      <CardDescription>Here you can manage your expenses</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                       <CreateFormsWrapper

@@ -13,8 +13,8 @@ type Props<T extends FieldValues> = {
 
 export function FieldTransactionAccount<T extends FieldValues>({
   name,
-  label = 'Transaction Account',
-  placeholder = 'Transaction Account',
+  label = 'Transaction account',
+  placeholder = 'Transaction account',
   disabled,
 }: Props<T>) {
   const { control, trigger } = useFormContext<T>();
@@ -22,7 +22,6 @@ export function FieldTransactionAccount<T extends FieldValues>({
 
   if (isLoading) return <Skeleton className="h-10 w-full" />;
 
-  // Transformar as transaction accounts para o formato esperado pelo InputWithSearch
   const transactionAccountOptions: SelectOption[] =
     transactionAccounts?.map((account) => ({
       value: account.id,

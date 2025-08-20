@@ -87,7 +87,7 @@ export const expenseColumns = ({
     },
     {
       accessorKey: 'transactionAccountId',
-      header: 'Transaction Account',
+      header: 'Transaction account',
       cell: ({ row }) => {
         const transactionAccountId = row.getValue('transactionAccountId') as string | null | undefined;
         const transactionAccount = getTransactionAccountName(transactionAccountId);

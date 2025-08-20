@@ -142,7 +142,11 @@ export function ExpenseForm({
           )}
         />
 
-        <FieldCategory<ExpenseFormData> name="categoryId" />
+        <FieldCategory
+          label="Category"
+          value={form.watch('categoryId')}
+          onValueChange={(value) => form.setValue('categoryId', value)}
+        />
 
         <FieldPaidBy<ExpenseFormData> name="paidById" />
 
