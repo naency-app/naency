@@ -1,10 +1,8 @@
 'use client';
 import { ChartAreaInteractive } from '@/components/chart-area-interactive';
-import { DataTable } from '@/components/data-table';
 import ProfileTest from '@/components/profile-test';
 import { SectionCards } from '@/components/section-cards';
 import UsersList from '@/components/users-list';
-import staticData from './data.json';
 
 export default function Page() {
   return (

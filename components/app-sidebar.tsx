@@ -2,6 +2,7 @@
 
 import {
   IconCamera,
+  IconCash,
   IconChartBar,
   IconDashboard,
   IconDatabase,
@@ -14,6 +15,7 @@ import {
   IconSearch,
   IconSettings,
   IconTableFilled,
+  IconTrendingUp,
 } from '@tabler/icons-react';
 import type * as React from 'react';
 
@@ -47,6 +49,11 @@ const data = {
       title: 'Expenses',
       url: '/expenses',
       icon: IconListDetails,
+    },
+    {
+      title: 'Incomes',
+      url: '/incomes',
+      icon: IconCash,
     },
     {
       title: 'Categories',
