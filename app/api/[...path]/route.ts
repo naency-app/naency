@@ -2,15 +2,15 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { auth } from '@/lib/auth';
 import { headers as nextHeaders } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 
 const GO_API_URL = process.env.GO_API_URL || 'http://localhost:8080';
 
-function buildTargetUrl(path: string[], req: NextRequest) {
+function buildTargetUrl(path: string[], request: Request) {
   const base = `${GO_API_URL}/api/${path.join('/')}`;
-  const qs = req.nextUrl.search || '';
+  const qs = new URL(request.url).search || '';
   return new URL(`${base}${qs}`);
 }
 
@@ -28,7 +28,9 @@ function filterRequestHeaders(h: Headers) {
     'trailers',
     'proxy-authenticate',
     'proxy-authorization',
-  ].forEach((k) => out.delete(k));
+  ].forEach((k) => {
+    out.delete(k);
+  });
   return out;
 }
 
@@ -52,8 +54,8 @@ async function fetchWithTokenRetry(url: URL, init: RequestInit): Promise<Respons
   }
 }
 
-async function proxy(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const url = buildTargetUrl(params.path, request);
+async function proxy(request: Request, context: { params: { path: string[] } }) {
+  const url = buildTargetUrl(context.params.path, request);
 
   // tenta obter token; se não tiver sessão, 401
   let token: string | undefined;
@@ -85,9 +87,9 @@ async function proxy(request: NextRequest, { params }: { params: { path: string[
 
     const respHeaders = new Headers(resp.headers);
     // remova headers que bagunçam o streaming/compressão
-    ['content-encoding', 'content-length', 'transfer-encoding', 'connection'].forEach((h) =>
-      respHeaders.delete(h),
-    );
+    ['content-encoding', 'content-length', 'transfer-encoding', 'connection'].forEach((h) => {
+      respHeaders.delete(h);
+    });
 
     return new NextResponse(resp.body, {
       status: resp.status,
@@ -112,8 +114,18 @@ export const OPTIONS = async () =>
     },
   });
 
-export const GET = proxy;
-export const POST = proxy;
-export const PUT = proxy;
-export const DELETE = proxy;
-export const PATCH = proxy;
+export async function GET(request: Request, context: any) {
+  return proxy(request, context);
+}
+export async function POST(request: Request, context: any) {
+  return proxy(request, context);
+}
+export async function PUT(request: Request, context: any) {
+  return proxy(request, context);
+}
+export async function DELETE(request: Request, context: any) {
+  return proxy(request, context);
+}
+export async function PATCH(request: Request, context: any) {
+  return proxy(request, context);
+}

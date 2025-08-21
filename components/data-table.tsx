@@ -1,72 +1,67 @@
-"use client"
+'use client';
 
-import * as React from "react"
 import {
   closestCenter,
   DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
+  type UniqueIdentifier,
   useSensor,
   useSensors,
-  type DragEndEvent,
-  type UniqueIdentifier,
-} from "@dnd-kit/core"
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
-  IconDotsVertical,
   IconGripVertical,
   IconLayoutColumns,
-  IconPlus,
-} from "@tabler/icons-react"
+} from '@tabler/icons-react';
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
+  type ColumnDef,
+  type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
+  type Row,
+  type SortingState,
   useReactTable,
-  Row,
-} from "@tanstack/react-table"
+  type VisibilityState,
+} from '@tanstack/react-table';
+import * as React from 'react';
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -74,13 +69,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from '@/components/ui/table';
 
 // Create a separate component for the drag handle
 function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> }) {
   const { attributes, listeners } = useSortable({
     id,
-  })
+  });
 
   return (
     <Button
@@ -93,31 +88,57 @@ function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> 
       <IconGripVertical className="text-muted-foreground size-3" />
       <span className="sr-only">Drag to reorder</span>
     </Button>
-  )
+  );
 }
 
 function DataTableRow<TData>({
   row,
   columns,
-  enableDragAndDrop = false
+  enableDragAndDrop = false,
+  onRowClick,
 }: {
-  row: Row<TData>
-  columns: ColumnDef<TData>[]
-  enableDragAndDrop?: boolean
+  row: Row<TData>;
+  columns: ColumnDef<TData>[];
+  enableDragAndDrop?: boolean;
+  onRowClick?: (row: Row<TData>) => void;
 }) {
-  const sortableProps = useSortable({ id: row.id })
-  const { transform, transition, setNodeRef, isDragging } = enableDragAndDrop ? sortableProps : {}
+  const sortableProps = useSortable({ id: row.id });
+  const { transform, transition, setNodeRef, isDragging } = enableDragAndDrop ? sortableProps : {};
+
+  const handleRowClick = (e: React.MouseEvent) => {
+    // Don't trigger row click if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('select') ||
+      target.closest('[role="button"]') ||
+      target.closest('[data-radix-collection-item]')
+    ) {
+      return;
+    }
+
+    if (onRowClick) {
+      onRowClick(row);
+    }
+  };
 
   return (
     <TableRow
-      data-state={row.getIsSelected() && "selected"}
+      data-state={row.getIsSelected() && 'selected'}
       data-dragging={isDragging}
       ref={enableDragAndDrop ? setNodeRef : undefined}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
-      style={enableDragAndDrop && transform ? {
-        transform: CSS.Transform.toString(transform),
-        transition: transition,
-      } : undefined}
+      className={`relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 ${onRowClick ? 'cursor-pointer hover:bg-muted/50' : ''
+        }`}
+      style={
+        enableDragAndDrop && transform
+          ? {
+            transform: CSS.Transform.toString(transform),
+            transition: transition,
+          }
+          : undefined
+      }
+      onClick={onRowClick ? handleRowClick : undefined}
     >
       {row.getVisibleCells().map((cell) => (
         <TableCell key={cell.id}>
@@ -125,26 +146,27 @@ function DataTableRow<TData>({
         </TableCell>
       ))}
     </TableRow>
-  )
+  );
 }
 
 export interface DataTableProps<TData> {
-  data: TData[]
-  columns: ColumnDef<TData>[]
-  enableDragAndDrop?: boolean
-  enableRowSelection?: boolean
-  enablePagination?: boolean
-  enableColumnVisibility?: boolean
-  enableSearch?: boolean
-  searchPlaceholder?: string
-  onDataChange?: (data: TData[]) => void
-  onRowSelectionChange?: (selection: Record<string, boolean>) => void
-  className?: string
-  showToolbar?: boolean
-  toolbarActions?: React.ReactNode
-  emptyMessage?: string
-  pageSizeOptions?: number[]
-  defaultPageSize?: number
+  data: TData[];
+  columns: ColumnDef<TData>[];
+  enableDragAndDrop?: boolean;
+  enableRowSelection?: boolean;
+  enablePagination?: boolean;
+  enableColumnVisibility?: boolean;
+  enableSearch?: boolean;
+  searchPlaceholder?: string;
+  onDataChange?: (data: TData[]) => void;
+  onRowSelectionChange?: (selection: Record<string, boolean>) => void;
+  onRowClick?: (row: Row<TData>) => void;
+  className?: string;
+  showToolbar?: boolean;
+  toolbarActions?: React.ReactNode;
+  emptyMessage?: string;
+  pageSizeOptions?: number[];
+  defaultPageSize?: number;
 }
 
 export function DataTable<TData>({
@@ -155,71 +177,73 @@ export function DataTable<TData>({
   enablePagination = true,
   enableColumnVisibility = true,
   enableSearch = true,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
   onDataChange,
   onRowSelectionChange,
-  className = "",
+  onRowClick,
+  className = '',
   showToolbar = true,
   toolbarActions,
-  emptyMessage = "No results.",
+  emptyMessage = 'No results.',
   pageSizeOptions = [10, 20, 30, 40, 50],
   defaultPageSize = 10,
 }: DataTableProps<TData>) {
   // Ensure initialData is always an array
-  const safeInitialData = Array.isArray(initialData) ? initialData : []
-  const [data, setData] = React.useState(() => safeInitialData)
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const safeInitialData = Array.isArray(initialData) ? initialData : [];
+  const [data, setData] = React.useState(() => safeInitialData);
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [pagination, setPagination] = React.useState({
     pageIndex: 0,
     pageSize: defaultPageSize,
-  })
-  const [globalFilter, setGlobalFilter] = React.useState("")
+  });
+  const [globalFilter, setGlobalFilter] = React.useState('');
 
-  const sortableId = React.useId()
+  const sortableId = React.useId();
+  const rowsPerPageId = React.useId();
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
     useSensor(TouchSensor, {}),
     useSensor(KeyboardSensor, {})
-  )
+  );
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map((item, index) => `row-${index}`) || [],
+    () => data?.map((_item, index) => `row-${index}`) || [],
     [data]
-  )
+  );
 
   // Add drag column if drag and drop is enabled
   const tableColumns = React.useMemo(() => {
-    const safeColumns = Array.isArray(columns) ? columns : []
+    const safeColumns = Array.isArray(columns) ? columns : [];
     if (enableDragAndDrop) {
       return [
         {
-          id: "drag",
+          id: 'drag',
           header: () => null,
           cell: ({ row }) => <DragHandle id={row.id} row={row} />,
           enableSorting: false,
           enableHiding: false,
         },
         ...safeColumns,
-      ]
+      ];
     }
-    return safeColumns
-  }, [columns, enableDragAndDrop])
+    return safeColumns;
+  }, [columns, enableDragAndDrop]);
 
   // Add selection column if row selection is enabled
   const finalColumns = React.useMemo(() => {
     if (enableRowSelection) {
       return [
         {
-          id: "select",
+          id: 'select',
           header: ({ table }: { table: ReturnType<typeof useReactTable<TData>> }) => (
             <div className="flex items-center justify-center">
               <Checkbox
                 checked={
                   table.getIsAllPageRowsSelected() ||
-                  (table.getIsSomePageRowsSelected() && "indeterminate")
+                  (table.getIsSomePageRowsSelected() && 'indeterminate')
                 }
                 onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
                 aria-label="Select all"
@@ -239,10 +263,10 @@ export function DataTable<TData>({
           enableHiding: false,
         },
         ...tableColumns,
-      ]
+      ];
     }
-    return tableColumns
-  }, [tableColumns, enableRowSelection])
+    return tableColumns;
+  }, [tableColumns, enableRowSelection]);
 
   const table = useReactTable({
     data: data || [],
@@ -255,12 +279,17 @@ export function DataTable<TData>({
       pagination,
       globalFilter,
     },
-    getRowId: (row, index) => `row-${index}`,
+    getRowId: (row) => {
+      if (row && typeof row === 'object' && 'id' in row) {
+        return String(row.id);
+      }
+      return `row-${Math.random().toString(36).substr(2, 9)}`;
+    },
     enableRowSelection,
     onRowSelectionChange: (updater) => {
-      const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater
-      setRowSelection(newSelection)
-      onRowSelectionChange?.(newSelection)
+      const newSelection = typeof updater === 'function' ? updater(rowSelection) : updater;
+      setRowSelection(newSelection);
+      onRowSelectionChange?.(newSelection);
     },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -273,44 +302,40 @@ export function DataTable<TData>({
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
-  })
-
-
+  });
 
   function handleDragEnd(event: DragEndEvent) {
-    if (!enableDragAndDrop) return
+    if (!enableDragAndDrop) return;
 
-    const { active, over } = event
+    const { active, over } = event;
     if (active && over && active.id !== over.id) {
-      const oldIndex = dataIds.indexOf(active.id)
-      const newIndex = dataIds.indexOf(over.id)
-      const newData = arrayMove(data, oldIndex, newIndex)
-      setData(newData)
-      onDataChange?.(newData)
+      const oldIndex = dataIds.indexOf(active.id);
+      const newIndex = dataIds.indexOf(over.id);
+      const newData = arrayMove(data, oldIndex, newIndex);
+      setData(newData);
+      onDataChange?.(newData);
     }
   }
 
   // Update data when initialData changes
   React.useEffect(() => {
-    const safeData = Array.isArray(initialData) ? initialData : []
-    setData(safeData)
-  }, [initialData])
+    const safeData = Array.isArray(initialData) ? initialData : [];
+    setData(safeData);
+  }, [initialData]);
 
   // Ensure table is properly initialized
   if (!table || !table.getRowModel || !finalColumns || finalColumns.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-muted-foreground">
-          {!finalColumns || finalColumns.length === 0
-            ? "No columns defined"
-            : "Loading table..."}
+          {!finalColumns || finalColumns.length === 0 ? 'No columns defined' : 'Loading table...'}
         </div>
       </div>
-    )
+    );
   }
 
   // Get rows safely
-  const rows = table.getRowModel()?.rows || []
+  const rows = table.getRowModel()?.rows || [];
 
   return (
     <div className={`w-full ${className}`}>
@@ -321,7 +346,7 @@ export function DataTable<TData>({
               <div className="flex items-center gap-2">
                 <Input
                   placeholder={searchPlaceholder}
-                  value={globalFilter ?? ""}
+                  value={globalFilter ?? ''}
                   onChange={(event) => setGlobalFilter(event.target.value)}
                   className="max-w-sm"
                 />
@@ -344,9 +369,7 @@ export function DataTable<TData>({
                   {table
                     .getAllColumns()
                     .filter(
-                      (column) =>
-                        typeof column.accessorFn !== "undefined" &&
-                        column.getCanHide()
+                      (column) => typeof column.accessorFn !== 'undefined' && column.getCanHide()
                     )
                     .map((column) => {
                       return (
@@ -354,13 +377,11 @@ export function DataTable<TData>({
                           key={column.id}
                           className="capitalize"
                           checked={column.getIsVisible()}
-                          onCheckedChange={(value) =>
-                            column.toggleVisibility(!!value)
-                          }
+                          onCheckedChange={(value) => column.toggleVisibility(!!value)}
                         >
                           {column.id}
                         </DropdownMenuCheckboxItem>
-                      )
+                      );
                     })}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -387,37 +408,29 @@ export function DataTable<TData>({
                         <TableHead key={header.id} colSpan={header.colSpan}>
                           {header.isPlaceholder
                             ? null
-                            : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            : flexRender(header.column.columnDef.header, header.getContext())}
                         </TableHead>
-                      )
+                      );
                     })}
                   </TableRow>
                 ))}
               </TableHeader>
               <TableBody>
                 {rows && rows.length > 0 ? (
-                  <SortableContext
-                    items={dataIds}
-                    strategy={verticalListSortingStrategy}
-                  >
+                  <SortableContext items={dataIds} strategy={verticalListSortingStrategy}>
                     {rows.map((row) => (
                       <DataTableRow
                         key={row.id}
                         row={row}
                         columns={finalColumns}
                         enableDragAndDrop={enableDragAndDrop}
+                        onRowClick={onRowClick}
                       />
                     ))}
                   </SortableContext>
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={finalColumns.length}
-                      className="h-24 text-center"
-                    >
+                    <TableCell colSpan={finalColumns.length} className="h-24 text-center">
                       {emptyMessage}
                     </TableCell>
                   </TableRow>
@@ -435,12 +448,9 @@ export function DataTable<TData>({
                       <TableHead key={header.id} colSpan={header.colSpan}>
                         {header.isPlaceholder
                           ? null
-                          : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          : flexRender(header.column.columnDef.header, header.getContext())}
                       </TableHead>
-                    )
+                    );
                   })}
                 </TableRow>
               ))}
@@ -453,14 +463,12 @@ export function DataTable<TData>({
                     row={row}
                     columns={finalColumns}
                     enableDragAndDrop={false}
+                    onRowClick={onRowClick}
                   />
                 ))
               ) : (
                 <TableRow>
-                  <TableCell
-                    colSpan={finalColumns.length}
-                    className="h-24 text-center"
-                  >
+                  <TableCell colSpan={finalColumns.length} className="h-24 text-center">
                     {emptyMessage}
                   </TableCell>
                 </TableRow>
@@ -473,24 +481,22 @@ export function DataTable<TData>({
       {enablePagination && (
         <div className="flex items-center justify-between px-4 py-4">
           <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
-            {table.getFilteredSelectedRowModel()?.rows?.length || 0} of{" "}
-            {rows.length} row(s) selected.
+            {table.getFilteredSelectedRowModel()?.rows?.length || 0} of {rows.length} row(s)
+            selected.
           </div>
           <div className="flex w-full items-center gap-8 lg:w-fit">
             <div className="hidden items-center gap-2 lg:flex">
-              <Label htmlFor="rows-per-page" className="text-sm font-medium">
+              <Label htmlFor={rowsPerPageId} className="text-sm font-medium">
                 Rows per page
               </Label>
               <Select
                 value={`${table.getState().pagination.pageSize}`}
                 onValueChange={(value) => {
-                  table.setPageSize(Number(value))
+                  table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
+                <SelectTrigger size="sm" className="w-20" id={rowsPerPageId}>
+                  <SelectValue placeholder={table.getState().pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
                   {pageSizeOptions.map((pageSize) => (
@@ -502,8 +508,7 @@ export function DataTable<TData>({
               </Select>
             </div>
             <div className="flex w-fit items-center justify-center text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
+              Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
             </div>
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
@@ -550,5 +555,5 @@ export function DataTable<TData>({
         </div>
       )}
     </div>
-  )
+  );
 }

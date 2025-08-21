@@ -1,0 +1,3 @@
+ALTER TABLE "expenses" ADD COLUMN "transaction_account_id" uuid;--> statement-breakpoint
+ALTER TABLE "expenses" ADD CONSTRAINT "expenses_transaction_account_id_transaction_accounts_id_fk" FOREIGN KEY ("transaction_account_id") REFERENCES "public"."transaction_accounts"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "expenses_transaction_account_id_idx" ON "expenses" USING btree ("transaction_account_id");

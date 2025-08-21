@@ -1,10 +1,8 @@
-import { trpc } from "@/lib/trpc";
-import { InputWithSearch, type SelectOption } from "./ui/input-with-search";
-import {
-  FormControl, FormField, FormItem, FormLabel, FormMessage,
-} from "./ui/form";
-import { Skeleton } from "./ui/skeleton";
-import { useFormContext, type FieldValues, type Path } from "react-hook-form";
+import { type FieldValues, type Path, useFormContext } from 'react-hook-form';
+import { trpc } from '@/lib/trpc';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
+import { InputWithSearch, type SelectOption } from './ui/input-with-search';
+import { Skeleton } from './ui/skeleton';
 
 type Props<T extends FieldValues> = {
   name: Path<T>;
@@ -16,8 +14,8 @@ type Props<T extends FieldValues> = {
 
 export function FieldPaidBy<T extends FieldValues>({
   name,
-  label = "Paid By",
-  placeholder = "Paid By",
+  label = 'Paid by',
+  placeholder = 'Paid by',
   disabled,
 }: Props<T>) {
   const { control, trigger } = useFormContext<T>();
@@ -29,7 +27,7 @@ export function FieldPaidBy<T extends FieldValues>({
     ...(paidBy?.map((user) => ({
       value: user.id,
       label: user.name,
-    })) || [])
+    })) || []),
   ];
 
   return (
@@ -44,10 +42,13 @@ export function FieldPaidBy<T extends FieldValues>({
               <div className="flex items-center gap-2">
                 <InputWithSearch
                   options={paidByOptions}
-                  value={typeof field.value === "string" ? field.value : ""}
+                  value={typeof field.value === 'string' ? field.value : ''}
                   onValueChange={(value) => {
                     // Se value for undefined ou string vazia, define como null para o RHF
-                    const next = (value === "" || value === undefined) ? (null as unknown as T[typeof name]) : (value as unknown as T[typeof name]);
+                    const next =
+                      value === '' || value === undefined
+                        ? (null as unknown as T[typeof name])
+                        : (value as unknown as T[typeof name]);
                     field.onChange(next);
                     trigger(name);
                   }}

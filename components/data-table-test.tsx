@@ -1,32 +1,32 @@
-"use client"
+'use client';
 
-import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from "./data-table"
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from './data-table';
 
 // Tipo simples para teste
 interface TestData {
-  id: string
-  name: string
+  id: string;
+  name: string;
 }
 
 // Dados de teste
 const testData: TestData[] = [
-  { id: "1", name: "Item 1" },
-  { id: "2", name: "Item 2" },
-  { id: "3", name: "Item 3" },
-]
+  { id: '1', name: 'Item 1' },
+  { id: '2', name: 'Item 2' },
+  { id: '3', name: 'Item 3' },
+];
 
 // Colunas simples
 const testColumns: ColumnDef<TestData>[] = [
   {
-    accessorKey: "id",
-    header: "ID",
+    accessorKey: 'id',
+    header: 'ID',
   },
   {
-    accessorKey: "name",
-    header: "Nome",
+    accessorKey: 'name',
+    header: 'Nome',
   },
-]
+];
 
 export function DataTableTest() {
   return (
@@ -42,5 +42,5 @@ export function DataTableTest() {
         showToolbar={false}
       />
     </div>
-  )
+  );
 }

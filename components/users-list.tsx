@@ -1,9 +1,7 @@
-"use client"
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { trpc } from "@/lib/trpc"
-import { type User } from "@/types/trpc"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
 
 export default function UsersList() {
   const { data: users, isLoading, error } = trpc.user.getAll.useQuery();
@@ -14,9 +12,9 @@ export default function UsersList() {
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+      minute: '2-digit',
+    });
+  };
 
   if (isLoading) {
     return (
@@ -33,7 +31,7 @@ export default function UsersList() {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (error) {
@@ -48,7 +46,7 @@ export default function UsersList() {
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -65,9 +63,7 @@ export default function UsersList() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="text-sm text-gray-500 mb-4">
-              Total de usuários: {users.length}
-            </div>
+            <div className="text-sm text-gray-500 mb-4">Total de usuários: {users.length}</div>
             <div className="grid gap-4">
               {users.map((user) => (
                 <div
@@ -83,14 +79,10 @@ export default function UsersList() {
                       <div className="text-xs text-gray-500 space-y-1">
                         <p>Criado em: {formatDate(user.createdAt?.toString() || '')}</p>
                         <p>Atualizado em: {formatDate(user.updatedAt?.toString() || '')}</p>
-                        {user.image && (
-                          <p>Imagem: {user.image}</p>
-                        )}
+                        {user.image && <p>Imagem: {user.image}</p>}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 font-mono">
-                      ID: {user.id}
-                    </div>
+                    <div className="text-xs text-gray-400 font-mono">ID: {user.id}</div>
                   </div>
                 </div>
               ))}
@@ -99,5 +91,5 @@ export default function UsersList() {
         )}
       </CardContent>
     </Card>
-  )
-} 
+  );
+}

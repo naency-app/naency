@@ -1,5 +1,3 @@
-import { type AppRouter } from '../server/routers/_app';
-
 export type { AppRouter } from '../server/routers/_app';
 
 export type User = {
@@ -24,6 +22,7 @@ export type Expense = {
   amount: number;
   categoryId?: string;
   paidById?: string;
+  transactionAccountId?: string;
   paidAt?: Date;
   createdAt?: Date;
 };

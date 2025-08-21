@@ -1,33 +1,10 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { IconDotsVertical, IconPlus, IconDownload, IconTrash } from "@tabler/icons-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { DataTable } from "./data-table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Tipos de dados de exemplo
 
-
-
-
-
-
-
-
 export function DataTableDemo() {
-  
-
   return (
     <div className="container mx-auto py-8 space-y-8">
       <div className="text-center space-y-2">
@@ -43,10 +20,8 @@ export function DataTableDemo() {
           <TabsTrigger value="orders">Pedidos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="products" className="space-y-4">
-          
-        </TabsContent>
+        <TabsContent value="products" className="space-y-4"></TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

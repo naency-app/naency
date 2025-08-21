@@ -1,17 +1,14 @@
-"use client"
+'use client';
 
-import { trpc } from "@/lib/trpc";
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
-import { toast } from "sonner";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle
-} from "@/components/ui/drawer";
+import { IconPlus, IconTrash } from '@tabler/icons-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { CreateFormsWrapper } from '@/components/create-forms-wrapper';
+import { DataTable } from '@/components/data-table';
+import DateRangeFilter from '@/components/date-range-filter';
+import { ExpenseForm } from '@/components/expense-form';
+import { ExpenseCards } from '@/components/feature/expense/expense-cards';
+import { expenseColumns } from '@/components/feature/expense/expenseColumns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,26 +18,27 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-import { type Expense } from "@/types/trpc";
-import { Badge, CategoryBadge } from "@/components/ui/badge";
-import { SectionCards } from "@/components/section-cards";
-import { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@/components/data-table";
-import { IconDotsVertical, IconDownload, IconPlus, IconTrash, IconCalendar, IconCategory, IconEdit, IconEye } from "@tabler/icons-react";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ExpenseForm } from "@/components/expense-form";
-import { useSidebar } from "@/components/ui/sidebar";
-import { formatCentsBRL, formatCurrency } from "@/helps/formatCurrency";
-import { expenseColumns } from "@/components/feature/expense/expenseColumns";
-import { ExpenseCards } from "@/components/feature/expense/expense-cards";
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { useSidebar } from '@/components/ui/sidebar';
+import { useDateFilter } from '@/hooks/use-date-filter';
+import { trpc } from '@/lib/trpc';
+import type { Expense } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -48,15 +46,21 @@ export default function ExpensesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const { isMobile } = useSidebar()
-  const { data: expensesData, isLoading, error } = trpc.expenses.getAll.useQuery();
+  const { isMobile } = useSidebar();
+  const { dateRange } = useDateFilter();
+
+  const { data: expensesData } = trpc.expenses.getAll.useQuery({
+    from: dateRange.from,
+    to: dateRange.to,
+  });
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
   const { data: paidByData } = trpc.paidBy.getAll.useQuery();
+  const { data: transactionAccountsData } = trpc.transactionAccount.getAll.useQuery();
   const utils = trpc.useUtils();
 
   const createExpense = trpc.expenses.create.useMutation({
     onSuccess: () => {
-      toast.success("Expense created successfully!");
+      toast.success('Expense created successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
@@ -69,7 +73,7 @@ export default function ExpensesPage() {
 
   const updateExpense = trpc.expenses.update.useMutation({
     onSuccess: () => {
-      toast.success("Expense updated successfully!");
+      toast.success('Expense updated successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setIsDrawerOpen(false);
@@ -82,7 +86,7 @@ export default function ExpensesPage() {
 
   const deleteExpense = trpc.expenses.delete.useMutation({
     onSuccess: () => {
-      toast.success("Expense deleted successfully!");
+      toast.success('Expense deleted successfully!');
       utils.expenses.getAll.invalidate();
       utils.expenses.getTotal.refetch();
       setDeleteDialogOpen(false);
@@ -106,44 +110,51 @@ export default function ExpensesPage() {
     },
   });
 
-
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({})
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (expensesData) {
-      setExpenses(expensesData.map(expense => ({
-        ...expense,
-        categoryId: expense.categoryId || undefined,
-        paidById: expense.paidById || undefined,
-        paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
-        createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined
-      })))
+      setExpenses(
+        expensesData.map((expense) => ({
+          ...expense,
+          categoryId: expense.categoryId || undefined,
+          paidById: expense.paidById || undefined,
+          transactionAccountId: expense.transactionAccountId || undefined,
+          paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
+          createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined,
+        }))
+      );
     }
-  }, [expensesData])
+  }, [expensesData]);
 
   const handleExpenseDataChange = (newData: Expense[]) => {
-    setExpenses(newData)
-  }
+    setExpenses(newData);
+  };
 
   const handleExpenseSelectionChange = (selection: Record<string, boolean>) => {
-    setSelectedExpenses(selection)
-  }
+    setSelectedExpenses(selection);
+  };
 
-  const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length
+  const selectedExpensesCount = Object.values(selectedExpenses).filter(Boolean).length;
 
   const getCategoryName = (categoryId: string | null | undefined) => {
-    if (!categoryId || !categoriesData) return null
-    const category = categoriesData.find(cat => cat.id === categoryId)
-    return { name: category?.name || "No category", color: category?.color || "#000" }
-  }
+    if (!categoryId || !categoriesData) return null;
+    const category = categoriesData.find((cat) => cat.id === categoryId);
+    return { name: category?.name || 'No category', color: category?.color || '#000' };
+  };
 
   const getPaidByName = (paidById: string | null | undefined) => {
-    if (!paidById || !paidByData) return null
-    const paidBy = paidByData.find(paidBy => paidBy.id === paidById)
-    return paidBy?.name || null
-  }
+    if (!paidById || !paidByData) return null;
+    const paidBy = paidByData.find((paidBy) => paidBy.id === paidById);
+    return paidBy?.name || null;
+  };
 
+  const getTransactionAccountName = (transactionAccountId: string | null | undefined) => {
+    if (!transactionAccountId || !transactionAccountsData) return null;
+    const transactionAccount = transactionAccountsData.find((account) => account.id === transactionAccountId);
+    return transactionAccount?.name || null;
+  };
 
   const handleCreateExpense = () => {
     setEditingExpense(null);
@@ -176,13 +187,20 @@ export default function ExpensesPage() {
   };
 
   const confirmBulkDelete = async () => {
-    const selectedIds = Object.keys(selectedExpenses).filter(id => selectedExpenses[id]);
+    const selectedIds = Object.keys(selectedExpenses).filter((id) => selectedExpenses[id]);
     if (selectedIds.length > 0) {
       await deleteManyExpenses.mutateAsync({ ids: selectedIds });
     }
   };
 
-  const handleFormSubmit = async (data: { name: string; amount: number; categoryId?: string | null; paidById?: string | null; paidAt?: Date }) => {
+  const handleFormSubmit = async (data: {
+    name: string;
+    amount: number;
+    categoryId?: string | null;
+    paidById?: string | null;
+    transactionAccountId?: string | null;
+    paidAt?: Date;
+  }) => {
     if (editingExpense) {
       await updateExpense.mutateAsync({
         id: editingExpense.id,
@@ -190,6 +208,7 @@ export default function ExpensesPage() {
         amount: data.amount,
         categoryId: data.categoryId || undefined,
         paidById: data.paidById || undefined,
+        transactionAccountId: data.transactionAccountId || undefined,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     } else {
@@ -198,6 +217,7 @@ export default function ExpensesPage() {
         amount: data.amount,
         categoryId: data.categoryId || undefined,
         paidById: data.paidById || undefined,
+        transactionAccountId: data.transactionAccountId || undefined,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     }
@@ -208,10 +228,6 @@ export default function ExpensesPage() {
     setEditingExpense(null);
   };
 
-
-
-
-
   return (
     <>
       <div className="flex flex-1 flex-col">
@@ -221,16 +237,24 @@ export default function ExpensesPage() {
             <div className="px-4 lg:px-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Expense management</CardTitle>
-                  <CardDescription>
-                    Here you can manage your expenses.
-                  </CardDescription>
-                  <CardAction>
-                    <Button variant="outline" size="sm" onClick={handleCreateExpense}>
-                      <IconPlus className="mr-2 h-4 w-4" />
-                      Add expense
-                    </Button>
-                  </CardAction>
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle>Expense management</CardTitle>
+                      <CardDescription>Here you can manage your expenses</CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CreateFormsWrapper
+                        onSuccess={() => {
+                          utils.categories.getAll.invalidate();
+                          utils.paidBy.getAll.invalidate();
+                        }}
+                      />
+                      <Button variant="outline" size="sm" onClick={handleCreateExpense}>
+                        <IconPlus className="mr-2 h-4 w-4" />
+                        Add expense
+                      </Button>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <DataTable
@@ -241,10 +265,11 @@ export default function ExpensesPage() {
                       handleDeleteExpense,
                       getPaidByName,
                       getCategoryName,
+                      getTransactionAccountName,
                     })}
                     enableDragAndDrop={true}
                     enableSearch={true}
-                    searchPlaceholder="Search expenses..."
+                    searchPlaceholder="Search"
                     enableRowSelection={true}
                     enablePagination={true}
                     enableColumnVisibility={true}
@@ -252,11 +277,7 @@ export default function ExpensesPage() {
                     toolbarActions={
                       <div className="flex items-center gap-2">
                         {selectedExpensesCount > 0 && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleBulkDelete}
-                          >
+                          <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                             <IconTrash className="mr-2 h-4 w-4" />
                             Delete ({selectedExpensesCount})
                           </Button>
@@ -266,6 +287,7 @@ export default function ExpensesPage() {
                     emptyMessage="No expenses found."
                     onDataChange={handleExpenseDataChange}
                     onRowSelectionChange={handleExpenseSelectionChange}
+                    onRowClick={(row) => handleViewExpense(row.original)}
                   />
                 </CardContent>
               </Card>
@@ -274,32 +296,35 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction={isMobile ? "bottom" : "right"} dismissible={false}>
+      <Drawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        direction={isMobile ? 'bottom' : 'right'}
+        dismissible={false}
+      >
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>
-              {editingExpense ? "Edit Expense" : "New Expense"}
-            </DrawerTitle>
+            <DrawerTitle>{editingExpense ? 'Edit expense' : 'Create new expense'}</DrawerTitle>
             <DrawerDescription>
               {editingExpense
-                ? "Update the information for the selected expense."
-                : "Fill in the information to create a new expense."
-              }
+                ? 'Update the information for the selected expense.'
+                : 'Fill in the information to create a new expense.'}
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
             {categoriesData && (
               <ExpenseForm
                 expense={editingExpense || undefined}
-                categories={categoriesData.map(cat => ({
+                categories={categoriesData.map((cat) => ({
                   ...cat,
                   color: cat.color || undefined,
-                  createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined
+                  createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined,
                 }))}
-                paidBy={paidByData?.map(paidBy => ({
+                paidBy={paidByData?.map((paidBy) => ({
                   ...paidBy,
-                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined
+                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined,
                 }))}
+
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createExpense.isPending || updateExpense.isPending}
@@ -314,15 +339,15 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the expense &quot;{expenseToDelete?.name}&quot;?
-              This action cannot be undone.
+              Are you sure you want to delete the expense &quot;{expenseToDelete?.name}&quot;? This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteExpense}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
@@ -335,15 +360,15 @@ export default function ExpensesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm bulk deletion</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {selectedExpensesCount} selected expenses?
-              This action cannot be undone.
+              Are you sure you want to delete {selectedExpensesCount} selected expenses? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmBulkDelete}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               Delete {selectedExpensesCount}
             </AlertDialogAction>
@@ -353,6 +378,3 @@ export default function ExpensesPage() {
     </>
   );
 }
-
-
-
