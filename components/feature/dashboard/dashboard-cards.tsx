@@ -1,4 +1,4 @@
-import { IconTrendingUp } from '@tabler/icons-react';
+import { IconTrendingDown, IconTrendingUp, IconWallet } from '@tabler/icons-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Card,
@@ -9,20 +9,67 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { formatCentsBRL } from '@/helps/formatCurrency';
+import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
 
 export function DashboardCards() {
+  const { dateRange } = useDateFilter();
+
   const {
     data: totalExpenses,
     isLoading: isLoadingExpenses,
     error: expensesError,
-  } = trpc.expenses.getTotal.useQuery();
+  } = trpc.expenses.getTotal.useQuery({
+    from: dateRange?.from,
+    to: dateRange?.to,
+  });
+
+  const {
+    data: totalIncomes,
+    isLoading: isLoadingIncomes,
+    error: incomesError,
+  } = trpc.incomes.getTotal.useQuery({
+    from: dateRange?.from,
+    to: dateRange?.to,
+  });
+
+  const balance = (totalIncomes || 0) - (totalExpenses || 0);
+  const isLoadingBalance = isLoadingExpenses || isLoadingIncomes;
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+      {/* Card de Total de Incomes */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total expenses</CardDescription>
+          <CardDescription>Total Incomes</CardDescription>
+          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+            {isLoadingIncomes ? (
+              <div className="h-8 w-24 animate-pulse bg-muted rounded" />
+            ) : incomesError ? (
+              <span className="text-destructive">Error</span>
+            ) : (
+              formatCentsBRL(totalIncomes || 0)
+            )}
+          </CardTitle>
+          <CardAction>
+            <Badge variant="outline" className="text-green-600 border-green-600">
+              <IconTrendingUp className="text-green-600" />
+              Income
+            </Badge>
+          </CardAction>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="line-clamp-1 flex gap-2 font-medium">
+            Total incomes this period <IconTrendingUp className="size-4 text-green-600" />
+          </div>
+          <div className="text-muted-foreground">Total incomes for the selected period</div>
+        </CardFooter>
+      </Card>
+
+      {/* Card de Total de Expenses */}
+      <Card className="@container/card">
+        <CardHeader>
+          <CardDescription>Total Expenses</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {isLoadingExpenses ? (
               <div className="h-8 w-24 animate-pulse bg-muted rounded" />
@@ -33,58 +80,79 @@ export function DashboardCards() {
             )}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+            <Badge variant="outline" className="text-destructive border-destructive">
+              <IconTrendingDown className="text-destructive" />
+              Expense
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Total expenses this month <IconTrendingUp className="size-4" />
+            Total expenses this period <IconTrendingDown className="size-4 text-destructive" />
           </div>
-          <div className="text-muted-foreground">Total expenses for the last 6 months</div>
+          <div className="text-muted-foreground">Total expenses for the selected period</div>
         </CardFooter>
       </Card>
 
+      {/* Card de Saldo */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Total paid by</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            R$ 1,250.00
+          <CardDescription>Balance</CardDescription>
+          <CardTitle
+            className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${balance >= 0 ? 'text-green-600' : 'text-destructive'
+              }`}
+          >
+            {isLoadingBalance ? (
+              <div className="h-8 w-24 animate-pulse bg-muted rounded" />
+            ) : (
+              formatCentsBRL(balance)
+            )}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              +12.5%
+            <Badge
+              variant="outline"
+              className={
+                balance >= 0 ? 'text-green-600 border-green-600' : 'text-destructive border-destructive'
+              }
+            >
+              <IconWallet className={balance >= 0 ? 'text-green-600' : 'text-destructive'} />
+              {balance >= 0 ? 'Positive' : 'Negative'}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Strong user retention <IconTrendingUp className="size-4" />
+            Net balance <IconWallet className="size-4" />
           </div>
-          <div className="text-muted-foreground">Engagement exceed targets</div>
+          <div className="text-muted-foreground">Incomes minus expenses for the period</div>
         </CardFooter>
       </Card>
+
+      {/* Card de Resumo */}
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>Growth Rate</CardDescription>
+          <CardDescription>Summary</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            4.5%
+            {isLoadingBalance ? (
+              <div className="h-8 w-24 animate-pulse bg-muted rounded" />
+            ) : (
+              totalIncomes && totalExpenses && totalIncomes > 0
+                ? `${Math.round((totalExpenses / totalIncomes) * 100)}%`
+                : '0%'
+            )}
           </CardTitle>
           <CardAction>
             <Badge variant="outline">
               <IconTrendingUp />
-              +4.5%
+              Expense Ratio
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Steady performance increase <IconTrendingUp className="size-4" />
+            Expense to Income ratio <IconTrendingUp className="size-4" />
           </div>
-          <div className="text-muted-foreground">Meets growth projections</div>
+          <div className="text-muted-foreground">Percentage of expenses relative to incomes</div>
         </CardFooter>
       </Card>
     </div>
