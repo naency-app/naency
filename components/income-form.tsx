@@ -46,8 +46,6 @@ type ProcessedIncomeData = {
 
 interface IncomeFormProps {
   income?: Income;
-  categories: (Category & { flow: 'income' })[];
-  receivingAccounts?: { id: string; name: string }[];
   onSubmit: (data: ProcessedIncomeData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
@@ -55,8 +53,6 @@ interface IncomeFormProps {
 
 export function IncomeForm({
   income,
-  categories,
-  receivingAccounts = [],
   onSubmit,
   onCancel,
   isLoading = false,
@@ -142,7 +138,6 @@ export function IncomeForm({
           name="categoryId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
               <FormControl>
                 <CategoryCombobox
                   flow="income"

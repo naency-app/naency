@@ -2,9 +2,9 @@
 
 import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Badge } from '@/components/ui/badge';
+import { Badge, CategoryBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/helps/formatCurrency';
+import { formatCentsBRL, formatCurrency } from '@/helps/formatCurrency';
 import { formatDate } from '@/helps/formatDate';
 import type { Income } from '@/types/trpc';
 
@@ -27,7 +27,7 @@ export const incomeColumns = ({
 }: IncomeColumnsProps): ColumnDef<Income>[] => [
     {
       accessorKey: 'receivedAt',
-      header: 'Received Date',
+      header: 'Received date',
       cell: ({ row }) => {
         const date = row.getValue('receivedAt') as Date;
         return formatDate(date);
@@ -36,15 +36,20 @@ export const incomeColumns = ({
     {
       accessorKey: 'amount',
       header: 'Amount',
-      cell: ({ row }) => (
-        <div className="font-medium text-green-600">{formatCurrency(row.getValue('amount'))}</div>
-      ),
+      cell: ({ row }) => {
+        const amount = row.getValue('amount') as number;
+        return (
+          <div className="font-mono font-semibold text-green-500">
+            {formatCentsBRL(amount)}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'description',
       header: 'Description',
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate" title={row.getValue('description')}>
+        <div className="max-w-[200px] truncate capitalize" title={row.getValue('description')}>
           {row.getValue('description')}
         </div>
       ),
@@ -56,25 +61,13 @@ export const incomeColumns = ({
       cell: ({ row }) => {
         const categoryId = row.getValue('categoryId') as string | null;
         const category = getCategoryName(categoryId);
-
-        if (!category) {
-          return <span className="text-muted-foreground">No category</span>;
-        }
-
-        return (
-          <Badge
-            variant="secondary"
-            className="max-w-[120px] truncate"
-            style={{ backgroundColor: category.color }}
-          >
-            {category.name}
-          </Badge>
-        );
+        if (!category) return '-';
+        return <CategoryBadge color={category.color} name={category.name} />;
       },
     },
     {
       accessorKey: 'receivingAccountId',
-      header: 'Receiving Account',
+      header: 'Receiving account',
       cell: ({ row }) => {
         const receivingAccountId = row.getValue('receivingAccountId') as string | null | undefined;
         const receivingAccount = getReceivingAccountName(receivingAccountId);

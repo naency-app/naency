@@ -11,7 +11,7 @@ import {
 import { formatCentsBRL } from '@/helps/formatCurrency';
 import { trpc } from '@/lib/trpc';
 
-export function SectionCards() {
+export function DashboardCards() {
   const {
     data: totalExpenses,
     isLoading: isLoadingExpenses,
