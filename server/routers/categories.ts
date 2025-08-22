@@ -38,25 +38,34 @@ export const categoriesRouter = router({
     }),
 
   // 👈 Nova função para buscar categorias com suas subcategorias (estrutura hierárquica)
-  getHierarchical: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
+  getHierarchical: publicProcedure
+    .input(z.object({ flow: z.enum(['expense', 'income']) }).optional())
+    .query(async ({ ctx, input }) => {
+      if (!ctx.userId) {
+        throw new TRPCError({ code: 'UNAUTHORIZED' });
+      }
 
-    const allCategories = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.userId, ctx.userId));
+      const baseCondition = eq(categories.userId, ctx.userId);
+      const conditions = [baseCondition];
 
-    // Organizar em estrutura hierárquica
-    const parentCategories = allCategories.filter((cat) => !cat.parentId);
-    const subcategories = allCategories.filter((cat) => cat.parentId);
+      if (input?.flow) {
+        conditions.push(eq(categories.flow, input.flow));
+      }
 
-    return parentCategories.map((parent) => ({
-      ...parent,
-      subcategories: subcategories.filter((sub) => sub.parentId === parent.id),
-    }));
-  }),
+      const allCategories = await db
+        .select()
+        .from(categories)
+        .where(and(...conditions));
+
+      // Organizar em estrutura hierárquica
+      const parentCategories = allCategories.filter((cat) => !cat.parentId);
+      const subcategories = allCategories.filter((cat) => cat.parentId);
+
+      return parentCategories.map((parent) => ({
+        ...parent,
+        subcategories: subcategories.filter((sub) => sub.parentId === parent.id),
+      }));
+    }),
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
     const result = await db.select().from(categories).where(eq(categories.id, input.id));
@@ -68,7 +77,8 @@ export const categoriesRouter = router({
       z.object({
         name: z.string().min(1),
         color: z.string().optional(),
-        parentId: z.string().optional(), // 👈 Novo campo opcional
+        parentId: z.string().optional(),
+        flow: z.enum(['expense', 'income']).optional().default('expense'),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -96,7 +106,8 @@ export const categoriesRouter = router({
         .values({
           name: input.name,
           color: input.color,
-          parentId: input.parentId, // 👈 Incluir parentId se fornecido
+          parentId: input.parentId,
+          flow: input.flow,
           userId: ctx.userId,
         })
         .returning();
@@ -112,6 +123,7 @@ export const categoriesRouter = router({
         name: z.string().min(1).optional(),
         color: z.string().optional(),
         parentId: z.string().optional(),
+        flow: z.enum(['expense', 'income']).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -148,6 +160,7 @@ export const categoriesRouter = router({
           name: input.name,
           color: input.color,
           parentId: input.parentId,
+          flow: input.flow,
         })
         .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)))
         .returning();

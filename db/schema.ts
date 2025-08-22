@@ -2,7 +2,9 @@ import {
   bigint,
   boolean,
   check,
+  foreignKey,
   index,
+  pgEnum,
   pgTable,
   text,
   timestamp,
@@ -11,8 +13,7 @@ import {
   varchar,
 } from 'drizzle-orm/pg-core';
 
-/* ---------- USER / AUTH ---------- */
-
+export const categoryFlowEnum = pgEnum('category_flow', ['expense', 'income']);
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -98,15 +99,29 @@ export const categories = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+    flow: categoryFlowEnum('flow').notNull().default('expense'),
     name: varchar('name', { length: 120 }).notNull(),
     color: varchar('color', { length: 24 }),
-    parentId: uuid('parent_id'), // 👈 Nova coluna para hierarquia (sem referência circular)
+    parentId: uuid('parent_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdIdx: index('categories_user_id_idx').on(t.userId),
-    userNameUniq: uniqueIndex('categories_user_name_uidx').on(t.userId, t.name),
+    userFlowIdx: index('categories_user_flow_idx').on(t.userId, t.flow),
     parentIdIdx: index('categories_parent_id_idx').on(t.parentId),
+
+    siblingsUniq: uniqueIndex('categories_user_flow_parent_name_uidx')
+      .on(t.userId, t.flow, t.parentId, t.name)
+      .where(sql`${t.parentId} IS NOT NULL`),
+
+    rootUniq: uniqueIndex('categories_user_flow_root_name_uidx')
+      .on(t.userId, t.flow, t.name)
+      .where(sql`${t.parentId} IS NULL`),
+
+    parentFk: foreignKey({
+      name: 'categories_parent_id_fkey',
+      columns: [t.parentId],
+      foreignColumns: [t.id],
+    }).onDelete('set null'),
   })
 );
 export const paidBy = pgTable(
@@ -115,13 +130,13 @@ export const paidBy = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     userId: text('user_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }), // 👈
+      .references(() => user.id, { onDelete: 'cascade' }),
     name: varchar('name', { length: 120 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    userIdIdx: index('paid_by_user_id_idx').on(t.userId), // 👈
-    userNameUniq: uniqueIndex('paid_by_user_name_uidx').on(t.userId, t.name), // 👈
+    userIdIdx: index('paid_by_user_id_idx').on(t.userId),
+    userNameUniq: uniqueIndex('paid_by_user_name_uidx').on(t.userId, t.name),
   })
 );
 
@@ -160,5 +175,32 @@ export const transactionAccounts = pgTable('transaction_accounts', {
   createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
 });
 
-// Importante: use `sql` do drizzle-orm se ainda não estiver importado
+export const incomes = pgTable(
+  'incomes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+
+    description: varchar('description', { length: 255 }).notNull(),
+    amount: bigint('amount', { mode: 'number' }).notNull(),
+    receivedAt: timestamp('received_at', { withTimezone: true, mode: 'date' }).notNull(),
+
+    receivingAccountId: uuid('receiving_account_id').references(() => transactionAccounts.id, {
+      onDelete: 'set null',
+    }),
+
+    categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+
+    createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userDateIdx: index('incomes_user_received_at_idx').on(t.userId, t.receivedAt),
+    accountIdx: index('incomes_receiving_account_id_idx').on(t.receivingAccountId),
+    categoryIdx: index('incomes_category_id_idx').on(t.categoryId),
+    nonNegativeAmount: sql`CHECK (${t.amount} >= 0)`,
+  })
+);
+
 import { sql } from 'drizzle-orm';

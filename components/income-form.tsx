@@ -21,81 +21,75 @@ import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
-import type { Category, Expense } from '@/types/trpc';
+import type { Category, Income } from '@/types/trpc';
 import CategoryCombobox from './CategoryCombobox';
-import { FieldCategory } from './field-category';
-import { FieldPaidBy } from './field-paid-by';
+import { FieldReceivingAccount } from './field-receiving-account';
 import { FieldTransactionAccount } from './field-transaction-account';
 
-const expenseSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  amount: z.number().min(1, 'Amount is required'), // Agora aceita valores como 589734 (centavos)
+const incomeSchema = z.object({
+  description: z.string().min(1, 'Description is required'),
+  amount: z.number().min(1, 'Amount is required'),
   categoryId: z.string().uuid().nullable().optional(),
-  paidById: z.string().uuid().nullable().optional(),
-  transactionAccountId: z.string().uuid().nullable().optional(),
-  paidAt: z.string().optional(),
+  receivingAccountId: z.string().uuid().nullable().optional(),
+  receivedAt: z.string().optional(),
 });
 
-type ExpenseFormData = z.infer<typeof expenseSchema>;
+type IncomeFormData = z.infer<typeof incomeSchema>;
 
-type ProcessedExpenseData = {
-  name: string;
+type ProcessedIncomeData = {
+  description: string;
   amount: number;
   categoryId?: string | null;
-  paidById?: string | null;
-  transactionAccountId?: string | null;
-  paidAt?: Date;
-  parentCategoryId?: string | null;
+  receivingAccountId?: string | null;
+  receivedAt?: Date;
 };
 
-interface ExpenseFormProps {
-  expense?: Expense;
-  categories: Category[];
-  paidBy?: Array<{ id: string; name: string; createdAt?: Date }>;
-  onSubmit: (data: ProcessedExpenseData) => Promise<void>;
+interface IncomeFormProps {
+  income?: Income;
+  categories: (Category & { flow: 'income' })[];
+  receivingAccounts?: { id: string; name: string }[];
+  onSubmit: (data: ProcessedIncomeData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function ExpenseForm({
-  expense,
+export function IncomeForm({
+  income,
   categories,
-  paidBy,
+  receivingAccounts = [],
   onSubmit,
   onCancel,
   isLoading = false,
-}: ExpenseFormProps) {
+}: IncomeFormProps) {
   const [date, setDate] = useState<Date | undefined>(
-    expense?.paidAt ? new Date(expense.paidAt) : new Date()
+    income?.receivedAt ? new Date(income.receivedAt) : new Date()
   );
 
-  const form = useForm<ExpenseFormData>({
-    resolver: zodResolver(expenseSchema),
+  const form = useForm<IncomeFormData>({
+    resolver: zodResolver(incomeSchema),
     defaultValues: {
-      name: expense?.name ?? '',
-      amount: expense?.amount ?? 0,
-      categoryId: expense?.categoryId ?? null,
-      paidById: expense?.paidById ?? null,
-      transactionAccountId: expense?.transactionAccountId ?? null,
-      paidAt: expense?.paidAt ? expense.paidAt.toISOString() : undefined,
+      description: income?.description ?? '',
+      amount: income?.amount ?? 0,
+      categoryId: income?.categoryId ?? null,
+      receivingAccountId: income?.receivingAccountId ?? null,
+      receivedAt: income?.receivedAt ? income.receivedAt.toISOString() : undefined,
     },
     mode: 'onChange',
   });
 
   useEffect(() => {
     if (date) {
-      form.setValue('paidAt', date.toISOString());
+      form.setValue('receivedAt', date.toISOString());
     }
   }, [date, form]);
 
-  const handleFormSubmit = async (data: ExpenseFormData) => {
-    const cleanedData: ProcessedExpenseData = {
-      name: data.name,
+  const handleFormSubmit = async (data: IncomeFormData) => {
+    const cleanedData: ProcessedIncomeData = {
+      description: data.description,
       amount: data.amount,
       categoryId: data.categoryId || undefined,
-      paidById: data.paidById || undefined,
-      transactionAccountId: data.transactionAccountId || undefined,
-      paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+      receivingAccountId: data.receivingAccountId || undefined,
+      receivedAt: data.receivedAt ? new Date(data.receivedAt) : undefined,
     };
 
     try {
@@ -104,18 +98,18 @@ export function ExpenseForm({
       console.error('Error in form submission:', error);
     }
   };
-  console.log(form.formState.errors);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
+          name="description"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Description *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter expense description" {...field} disabled={isLoading} />
+                <Input placeholder="Enter income description" {...field} disabled={isLoading} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -143,33 +137,32 @@ export function ExpenseForm({
           )}
         />
 
-        {/* <FieldCategory
-          label="Category"
-          value={form.watch('categoryId')}
-          onValueChange={(value) => form.setValue('categoryId', value)}
-        /> */}
         <FormField
           control={form.control}
           name="categoryId"
           render={({ field }) => (
-            <CategoryCombobox
-              flow="expense"
-              label="Category"
-              value={field.value}
-              onValueChange={(v) => field.onChange(v)}
-            />
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <FormControl>
+                <CategoryCombobox
+                  flow="income"
+                  label="Category"
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v)}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
         />
-        <FieldPaidBy<ExpenseFormData> name="paidById" />
-
-        <FieldTransactionAccount<ExpenseFormData> name="transactionAccountId" />
+        <FieldReceivingAccount name="receivingAccountId" />
 
         <FormField
           control={form.control}
-          name="paidAt"
+          name="receivedAt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Payment date</FormLabel>
+              <FormLabel>Received Date</FormLabel>
               <FormControl>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -218,7 +211,7 @@ export function ExpenseForm({
             className="flex-1"
             isLoading={isLoading}
           >
-            {expense ? 'Update' : 'Create'}
+            {income ? 'Update' : 'Create'}
           </Button>
         </div>
       </form>

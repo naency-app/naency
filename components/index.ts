@@ -8,5 +8,9 @@ export { DataTable } from './data-table';
 export { DataTableExpense } from './data-table-expense';
 // Forms
 export { ExpenseForm } from './expense-form';
+// Feature components
+export { IncomeCards } from './feature/income/income-cards';
+export { incomeColumns } from './feature/income/incomeColumns';
 export { FieldTransactionAccount } from './field-transaction-account';
+export { IncomeForm } from './income-form';
 export { LoginForm } from './login-form';
