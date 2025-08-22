@@ -19,21 +19,24 @@ import { trpc } from '@/lib/trpc';
 
 interface CreateCategoryFormProps {
   onSuccess?: () => void;
+  defaultFlow?: 'expense' | 'income';
 }
 
-export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
+export function CreateCategoryForm({ onSuccess, defaultFlow = 'expense' }: CreateCategoryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState('#3b82f6');
-  const [parentId, setParentId] = useState<string>('no-parent'); // 👈 Estado inicial como "no-parent"
+  const [parentId, setParentId] = useState<string>('no-parent');
+  const [flow, setFlow] = useState<'expense' | 'income'>(defaultFlow);
   const { isMobile } = useSidebar();
   const categoryNameId = useId();
   const categoryColorId = useId();
-  const categoryParentId = useId(); // 👈 Novo ID para o campo de categoria pai
+  const categoryParentId = useId();
+  const categoryFlowId = useId();
 
   const utils = trpc.useUtils();
 
-  // 👈 Buscar categorias pai para o select
+  // Buscar categorias pai para o select (filtradas por flow)
   const { data: parentCategories = [] } = trpc.categories.getParentCategories.useQuery();
 
   const createCategory = trpc.categories.create.useMutation({
@@ -45,7 +48,8 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
       setIsOpen(false);
       setName('');
       setColor('#3b82f6');
-      setParentId('no-parent'); // 👈 Resetar para "no-parent"
+      setParentId('no-parent');
+      setFlow(defaultFlow);
       onSuccess?.();
     },
     onError: (error) => {
@@ -63,7 +67,8 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
     await createCategory.mutateAsync({
       name: name.trim(),
       color,
-      parentId: parentId === 'no-parent' ? undefined : (parentId || undefined), // 👈 Converter "no-parent" para undefined
+      parentId: parentId === 'no-parent' ? undefined : (parentId || undefined),
+      flow,
     });
   };
 
@@ -71,14 +76,15 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
     setIsOpen(false);
     setName('');
     setColor('#3b82f6');
-    setParentId('no-parent'); // 👈 Resetar para "no-parent"
+    setParentId('no-parent');
+    setFlow(defaultFlow);
   };
 
   return (
     <>
       <Button onClick={() => setIsOpen(true)} size="sm" variant="outline">
         <IconPlus className="mr-2 h-4 w-4" />
-        Add category
+        Add {flow === 'income' ? 'income' : 'expense'} category
       </Button>
 
       <Drawer
@@ -89,11 +95,30 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
       >
         <DrawerContent>
           <DrawerHeader>
-            <DrawerTitle>Create new category</DrawerTitle>
-            <DrawerDescription>Add a new category to organize your expenses</DrawerDescription>
+            <DrawerTitle>Create new {flow === 'income' ? 'income' : 'expense'} category</DrawerTitle>
+            <DrawerDescription>
+              Add a new {flow === 'income' ? 'income' : 'expense'} category to organize your {flow === 'income' ? 'incomes' : 'expenses'}
+            </DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2 ">
+                <Label htmlFor={categoryFlowId}>Category type</Label>
+                <Select
+                  value={flow}
+                  onValueChange={(value: 'expense' | 'income') => setFlow(value)}
+                  disabled={createCategory.isPending}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor={categoryNameId}>Category name</Label>
                 <Input
@@ -105,7 +130,6 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
                 />
               </div>
 
-              {/* 👈 Novo campo para selecionar categoria pai */}
               <div className="space-y-2">
                 <Label htmlFor={categoryParentId}>Parent category (optional)</Label>
                 <Select
@@ -118,11 +142,13 @@ export function CreateCategoryForm({ onSuccess }: CreateCategoryFormProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="no-parent">No parent (main category)</SelectItem>
-                    {parentCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
+                    {parentCategories
+                      .filter((cat) => cat.flow === flow)
+                      .map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

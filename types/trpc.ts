@@ -12,8 +12,9 @@ export type User = {
 export type Category = {
   id: string;
   name: string;
-  color?: string;
-  createdAt?: Date;
+  color?: string | null;
+  flow: 'expense' | 'income';
+  createdAt?: string | Date;
 };
 
 export type Expense = {
@@ -24,5 +25,15 @@ export type Expense = {
   paidById?: string;
   transactionAccountId?: string;
   paidAt?: Date;
+  createdAt?: Date;
+};
+
+export type Income = {
+  id: string;
+  description: string;
+  amount: number;
+  categoryId?: string;
+  receivingAccountId?: string;
+  receivedAt: Date;
   createdAt?: Date;
 };

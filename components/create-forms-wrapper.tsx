@@ -5,12 +5,13 @@ import { CreatePaidByForm } from './create-paid-by-form';
 
 interface CreateFormsWrapperProps {
   onSuccess?: () => void;
+  context?: 'expense' | 'income';
 }
 
-export function CreateFormsWrapper({ onSuccess }: CreateFormsWrapperProps) {
+export function CreateFormsWrapper({ onSuccess, context = 'expense' }: CreateFormsWrapperProps) {
   return (
     <div className="flex items-center gap-2">
-      <CreateCategoryForm onSuccess={onSuccess} />
+      <CreateCategoryForm onSuccess={onSuccess} defaultFlow={context} />
       <CreatePaidByForm onSuccess={onSuccess} />
     </div>
   );

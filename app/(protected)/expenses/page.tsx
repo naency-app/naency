@@ -244,6 +244,7 @@ export default function ExpensesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <CreateFormsWrapper
+                        context="expense"
                         onSuccess={() => {
                           utils.categories.getAll.invalidate();
                           utils.paidBy.getAll.invalidate();
