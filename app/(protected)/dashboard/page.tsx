@@ -1,5 +1,6 @@
 'use client';
 import { CashflowBars } from '@/components/chart-area-interactive';
+import { CategoriesRadarChart } from '@/components/feature/dashboard/categories-radar-chart';
 import { DashboardCards } from '@/components/feature/dashboard/dashboard-cards';
 import { IncomeExpensePieChart } from '@/components/income-expense-pie-chart';
 
@@ -28,12 +29,12 @@ export default function Page() {
               }
               anchor="today"
             />
+
+            <CategoriesRadarChart />
           </div>
 
           {/* Componentes de teste da API */}
-          <div className="px-4 lg:px-6">
-
-          </div>
+          <div className="px-4 lg:px-6"></div>
         </div>
       </div>
     </div>

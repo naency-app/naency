@@ -74,11 +74,7 @@ const chartConfig = {
 /* =========================
    Helpers
    ========================= */
-const fmtBRL = (cents: number) =>
-  new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(cents / 100);
+
 
 const fmtBRLAxis = (cents: number) => {
   const abs = new Intl.NumberFormat('pt-BR', {
@@ -299,9 +295,9 @@ export function CashflowBars({
                       month: 'short',
                     })
                   }
-                  valueFormatter={(v, name) =>
-                    `${name === 'expense' ? '-' : ''}${fmtBRL(Math.abs(Number(v)))}`
-                  }
+                // valueFormatter={(v, name) =>
+                //   `${name === 'expense' ? '-' : ''}${fmtBRL(Math.abs(Number(v)))}`
+                // }
                 />
               }
             />
@@ -329,6 +325,7 @@ export function CashflowBars({
               dot={false}
               strokeWidth={2}
             />
+
           </ComposedChart>
         </ChartContainer>
       </CardContent>
