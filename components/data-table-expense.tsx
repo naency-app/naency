@@ -330,6 +330,7 @@ function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
 
 export function DataTableExpense({ data: initialData }: { data: z.infer<typeof schema>[] }) {
   const [data, setData] = React.useState(() => initialData);
+  const uniqueId = React.useId();
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
@@ -390,7 +391,7 @@ export function DataTableExpense({ data: initialData }: { data: z.infer<typeof s
           View
         </Label>
         <Select defaultValue="outline">
-          <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id="view-selector">
+          <SelectTrigger className="flex w-fit @4xl/main:hidden" size="sm" id={`${uniqueId}-view-selector`}>
             <SelectValue placeholder="Select a view" />
           </SelectTrigger>
           <SelectContent>
@@ -506,7 +507,7 @@ export function DataTableExpense({ data: initialData }: { data: z.infer<typeof s
                   table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
+                <SelectTrigger size="sm" className="w-20" id={`${uniqueId}-rows-per-page`}>
                   <SelectValue placeholder={table.getState().pagination.pageSize} />
                 </SelectTrigger>
                 <SelectContent side="top">
@@ -600,6 +601,7 @@ const chartConfig = {
 
 function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
   const isMobile = useIsMobile();
+  const id = React.useId();
 
   return (
     <Drawer direction={isMobile ? 'bottom' : 'right'}>
@@ -668,8 +670,8 @@ function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
           )}
           <form className="flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <Label htmlFor="header">Header</Label>
-              <Input id="header" defaultValue={item.header} />
+              <Label htmlFor={`${id}-header`}>Header</Label>
+              <Input id={`${id}-header`} defaultValue={item.header} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">

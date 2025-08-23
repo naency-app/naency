@@ -60,7 +60,7 @@ export const expenseColumns = ({
       accessorKey: 'name',
       header: 'Description',
       cell: ({ row }) => (
-        <div className="max-w-[200px] truncate capitalize " title={row.getValue('name')}>
+        <div className="max-w-[200px] truncate capitalize" title={row.getValue('name')}>
           {row.getValue('name')}
         </div>
       ),

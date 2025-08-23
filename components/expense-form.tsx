@@ -104,7 +104,6 @@ export function ExpenseForm({
       console.error('Error in form submission:', error);
     }
   };
-  console.log(form.formState.errors);
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">

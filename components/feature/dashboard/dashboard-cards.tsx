@@ -121,7 +121,7 @@ export function DashboardCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className=" flex gap-2 items-center font-medium">
             Net balance <IconWallet className="size-4" />
           </div>
           <div className="text-muted-foreground">Incomes minus expenses for the period</div>
