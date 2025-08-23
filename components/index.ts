@@ -9,6 +9,7 @@ export { DataTableExpense } from './data-table-expense';
 // Forms
 export { ExpenseForm } from './expense-form';
 // Feature components
+export { CategoriesRadarChart } from './feature/dashboard/categories-radar-chart';
 export { IncomeCards } from './feature/income/income-cards';
 export { incomeColumns } from './feature/income/incomeColumns';
 export { FieldTransactionAccount } from './field-transaction-account';

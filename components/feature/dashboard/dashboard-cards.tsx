@@ -52,15 +52,15 @@ export function DashboardCards() {
             )}
           </CardTitle>
           <CardAction>
-            <Badge variant="outline" className="text-green-600 border-green-600">
-              <IconTrendingUp className="text-green-600" />
-              Income
+            <Badge variant="outline" className="text-success border-success">
+              <IconTrendingUp className="text-success" />
+              Incomes
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            Total incomes this period <IconTrendingUp className="size-4 text-green-600" />
+            Total incomes this period <IconTrendingUp className="size-4 text-success" />
           </div>
           <div className="text-muted-foreground">Total incomes for the selected period</div>
         </CardFooter>
@@ -82,7 +82,7 @@ export function DashboardCards() {
           <CardAction>
             <Badge variant="outline" className="text-destructive border-destructive">
               <IconTrendingDown className="text-destructive" />
-              Expense
+              Expenses
             </Badge>
           </CardAction>
         </CardHeader>
@@ -99,7 +99,7 @@ export function DashboardCards() {
         <CardHeader>
           <CardDescription>Balance</CardDescription>
           <CardTitle
-            className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${balance >= 0 ? 'text-green-600' : 'text-destructive'
+            className={`text-2xl font-semibold tabular-nums @[250px]/card:text-3xl ${balance >= 0 ? 'text-success' : 'text-destructive'
               }`}
           >
             {isLoadingBalance ? (
@@ -112,16 +112,16 @@ export function DashboardCards() {
             <Badge
               variant="outline"
               className={
-                balance >= 0 ? 'text-green-600 border-green-600' : 'text-destructive border-destructive'
+                balance >= 0 ? 'text-success border-success' : 'text-destructive border-destructive'
               }
             >
-              <IconWallet className={balance >= 0 ? 'text-green-600' : 'text-destructive'} />
+              <IconWallet className={balance >= 0 ? 'text-success' : 'text-destructive'} />
               {balance >= 0 ? 'Positive' : 'Negative'}
             </Badge>
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className=" flex gap-2 items-center font-medium">
             Net balance <IconWallet className="size-4" />
           </div>
           <div className="text-muted-foreground">Incomes minus expenses for the period</div>
@@ -149,7 +149,7 @@ export function DashboardCards() {
           </CardAction>
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
+          <div className=" flex gap-2 font-medium items-center">
             Expense to Income ratio <IconTrendingUp className="size-4" />
           </div>
           <div className="text-muted-foreground">Percentage of expenses relative to incomes</div>

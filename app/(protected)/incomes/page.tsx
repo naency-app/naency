@@ -6,8 +6,8 @@ import { toast } from 'sonner';
 import { CreateFormsWrapper } from '@/components/create-forms-wrapper';
 import { DataTable } from '@/components/data-table';
 import { IncomeCards } from '@/components/feature/income/income-cards';
+import { IncomeForm } from '@/components/feature/income/income-form';
 import { incomeColumns } from '@/components/feature/income/incomeColumns';
-import { IncomeForm } from '@/components/income-form';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -136,7 +136,9 @@ export default function IncomesPage() {
 
   const getReceivingAccountName = (receivingAccountId: string | null | undefined) => {
     if (!receivingAccountId || !receivingAccountsData) return null;
-    const receivingAccount = receivingAccountsData.find((account) => account.id === receivingAccountId);
+    const receivingAccount = receivingAccountsData.find(
+      (account) => account.id === receivingAccountId
+    );
     return receivingAccount?.name || null;
   };
 

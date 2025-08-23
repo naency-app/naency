@@ -14,8 +14,8 @@ type Props<T extends FieldValues> = {
 
 export function FieldPaidBy<T extends FieldValues>({
   name,
-  label = 'Paid by',
-  placeholder = 'Paid by',
+  label = 'Payment method',
+  placeholder = 'Select method',
   disabled,
 }: Props<T>) {
   const { control, trigger } = useFormContext<T>();

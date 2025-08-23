@@ -7,6 +7,8 @@ import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import CategoryCombobox from '@/components/CategoryCombobox';
+import { FieldReceivingAccount } from '@/components/field-receiving-account';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -22,9 +24,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
 import type { Category, Income } from '@/types/trpc';
-import CategoryCombobox from './CategoryCombobox';
-import { FieldReceivingAccount } from './field-receiving-account';
-import { FieldTransactionAccount } from './field-transaction-account';
 
 const incomeSchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -51,12 +50,7 @@ interface IncomeFormProps {
   isLoading?: boolean;
 }
 
-export function IncomeForm({
-  income,
-  onSubmit,
-  onCancel,
-  isLoading = false,
-}: IncomeFormProps) {
+export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: IncomeFormProps) {
   const [date, setDate] = useState<Date | undefined>(
     income?.receivedAt ? new Date(income.receivedAt) : new Date()
   );
@@ -100,60 +94,6 @@ export function IncomeForm({
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description *</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter income description" {...field} disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem className="flex-[2]">
-              <FormLabel>Amount *</FormLabel>
-              <FormControl>
-                <Input
-                  value={formatCentsBRL(Number(field.value ?? 0))}
-                  onChange={(e) => {
-                    const cents = parseCurrencyToCents(e.target.value);
-                    field.onChange(cents);
-                  }}
-                  inputMode="numeric"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="categoryId"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <CategoryCombobox
-                  flow="income"
-                  label="Category"
-                  value={field.value}
-                  onValueChange={(v) => field.onChange(v)}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FieldReceivingAccount name="receivingAccountId" />
-
-        <FormField
-          control={form.control}
           name="receivedAt"
           render={({ field }) => (
             <FormItem>
@@ -184,6 +124,59 @@ export function IncomeForm({
                     />
                   </PopoverContent>
                 </Popover>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem className="flex-[2]">
+              <FormLabel>Amount *</FormLabel>
+              <FormControl>
+                <Input
+                  value={formatCentsBRL(Number(field.value ?? 0))}
+                  onChange={(e) => {
+                    const cents = parseCurrencyToCents(e.target.value);
+                    field.onChange(cents);
+                  }}
+                  inputMode="numeric"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description *</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter income description" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FieldReceivingAccount name="receivingAccountId" />
+
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <CategoryCombobox
+                  flow="income"
+                  label="Category"
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v)}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
