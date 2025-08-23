@@ -2,8 +2,7 @@
 import { CashflowBars } from '@/components/chart-area-interactive';
 import { DashboardCards } from '@/components/feature/dashboard/dashboard-cards';
 import { IncomeExpensePieChart } from '@/components/income-expense-pie-chart';
-import ProfileTest from '@/components/profile-test';
-import UsersList from '@/components/users-list';
+
 import { trpc } from '@/lib/trpc';
 
 export default function Page() {
@@ -33,10 +32,7 @@ export default function Page() {
 
           {/* Componentes de teste da API */}
           <div className="px-4 lg:px-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <UsersList />
-              <ProfileTest />
-            </div>
+
           </div>
         </div>
       </div>
