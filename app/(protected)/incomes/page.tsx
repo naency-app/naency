@@ -296,15 +296,6 @@ export default function IncomesPage() {
             {categoriesData && (
               <IncomeForm
                 income={editingIncome || undefined}
-                categories={
-                  categoriesData.filter((cat) => cat.flow === 'income') as (Category & {
-                    flow: 'income';
-                  })[]
-                }
-                receivingAccounts={receivingAccountsData?.map((acc) => ({
-                  id: acc.id,
-                  name: acc.name,
-                }))}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createIncome.isPending || updateIncome.isPending}

@@ -26,7 +26,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
-        <SidebarMenu>
+        {/* <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <SidebarMenuButton
               tooltip="Quick Create"
@@ -44,7 +44,7 @@ export function NavMain({
               <span className="sr-only">Inbox</span>
             </Button>
           </SidebarMenuItem>
-        </SidebarMenu>
+        </SidebarMenu> */}
         <SidebarMenu>
           {items.map((item) => {
             const isActive = pathname === item.url;
@@ -53,7 +53,7 @@ export function NavMain({
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     tooltip={item.title}
-                    className={isActive ? 'bg-accent text-accent-foreground' : ''}
+                    className={`${isActive ? 'bg-primary text-accent-foreground dark:text-accent hover:bg-primary/70 transition-colors duration-200 ease-linear' : ''} cursor-pointer`}
                   >
                     {item.icon && <item.icon />}
                     {item.title}

@@ -10,7 +10,15 @@ export function useDateFilter() {
     // Invalida as queries relacionadas a expenses quando as datas mudarem
     utils.expenses.getAll.invalidate();
     utils.expenses.getTotal.invalidate();
-  }, [utils.expenses.getAll, utils.expenses.getTotal]);
+    // Invalida as queries relacionadas a incomes quando as datas mudarem
+    utils.incomes.getAll.invalidate();
+    utils.incomes.getTotal.invalidate();
+  }, [
+    utils.expenses.getAll,
+    utils.expenses.getTotal,
+    utils.incomes.getAll,
+    utils.incomes.getTotal,
+  ]);
 
   return { dateRange };
 }

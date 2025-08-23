@@ -1,7 +1,7 @@
 'use client';
 import { ChartAreaInteractive } from '@/components/chart-area-interactive';
+import { DashboardCards } from '@/components/feature/dashboard/dashboard-cards';
 import ProfileTest from '@/components/profile-test';
-import { SectionCards } from '@/components/section-cards';
 import UsersList from '@/components/users-list';
 
 export default function Page() {
@@ -9,11 +9,10 @@ export default function Page() {
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-          <SectionCards />
+          <DashboardCards />
           <div className="px-4 lg:px-6">
             <ChartAreaInteractive />
           </div>
-
 
           {/* Componentes de teste da API */}
           <div className="px-4 lg:px-6">
