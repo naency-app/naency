@@ -32,7 +32,7 @@ export function IncomeCards() {
       <Card className="@container/card col-span-1.5">
         <CardHeader>
           <CardDescription>
-            Total amount of <span className="font-bold text-green-500">{periodText}</span>
+            Total amount of <span className="font-bold text-success">{periodText}</span>
           </CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {isLoadingIncome ? (

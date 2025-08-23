@@ -39,7 +39,7 @@ export const incomeColumns = ({
       cell: ({ row }) => {
         const amount = row.getValue('amount') as number;
         return (
-          <div className="font-mono font-semibold text-green-500">
+          <div className="font-mono font-semibold text-success">
             {formatCentsBRL(amount)}
           </div>
         );
@@ -54,17 +54,6 @@ export const incomeColumns = ({
         </div>
       ),
     },
-
-    {
-      accessorKey: 'categoryId',
-      header: 'Category',
-      cell: ({ row }) => {
-        const categoryId = row.getValue('categoryId') as string | null;
-        const category = getCategoryName(categoryId);
-        if (!category) return '-';
-        return <CategoryBadge color={category.color} name={category.name} />;
-      },
-    },
     {
       accessorKey: 'receivingAccountId',
       header: 'Receiving account',
@@ -75,6 +64,17 @@ export const incomeColumns = ({
         return <Badge variant="outline">{receivingAccount}</Badge>;
       },
     },
+    {
+      accessorKey: 'categoryId',
+      header: 'Category',
+      cell: ({ row }) => {
+        const categoryId = row.getValue('categoryId') as string | null;
+        const category = getCategoryName(categoryId);
+        if (!category) return '-';
+        return <CategoryBadge color={category.color} name={category.name} />;
+      },
+    },
+
     {
       id: 'actions',
       header: 'Actions',

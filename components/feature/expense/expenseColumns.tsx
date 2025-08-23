@@ -66,8 +66,18 @@ export const expenseColumns = ({
       ),
     },
     {
+      accessorKey: 'transactionAccountId',
+      header: 'Bank account',
+      cell: ({ row }) => {
+        const transactionAccountId = row.getValue('transactionAccountId') as string | null | undefined;
+        const transactionAccount = getTransactionAccountName(transactionAccountId);
+        if (!transactionAccount) return '-';
+        return <Badge variant="outline">{transactionAccount}</Badge>;
+      },
+    },
+    {
       accessorKey: 'paidById',
-      header: 'Paid by',
+      header: 'Payment method',
       cell: ({ row }) => {
         const paidById = row.getValue('paidById') as string | null | undefined;
         const paidBy = getPaidByName(paidById);
@@ -85,16 +95,7 @@ export const expenseColumns = ({
         return <CategoryBadge color={category.color} name={category.name} />;
       },
     },
-    {
-      accessorKey: 'transactionAccountId',
-      header: 'Transaction account',
-      cell: ({ row }) => {
-        const transactionAccountId = row.getValue('transactionAccountId') as string | null | undefined;
-        const transactionAccount = getTransactionAccountName(transactionAccountId);
-        if (!transactionAccount) return '-';
-        return <Badge variant="outline">{transactionAccount}</Badge>;
-      },
-    },
+
 
     {
       id: 'actions',

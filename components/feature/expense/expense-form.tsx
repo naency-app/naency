@@ -7,6 +7,9 @@ import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import CategoryCombobox from '@/components/CategoryCombobox';
+import { FieldPaidBy } from '@/components/field-paid-by';
+import { FieldTransactionAccount } from '@/components/field-transaction-account';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -22,10 +25,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
 import type { Category, Expense } from '@/types/trpc';
-import CategoryCombobox from './CategoryCombobox';
-import { FieldCategory } from './field-category';
-import { FieldPaidBy } from './field-paid-by';
-import { FieldTransactionAccount } from './field-transaction-account';
 
 const expenseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -109,62 +108,6 @@ export function ExpenseForm({
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description *</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter expense description" {...field} disabled={isLoading} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem className="flex-[2]">
-              <FormLabel>Amount *</FormLabel>
-              <FormControl>
-                <Input
-                  value={formatCentsBRL(Number(field.value ?? 0))}
-                  onChange={(e) => {
-                    const cents = parseCurrencyToCents(e.target.value);
-                    field.onChange(cents);
-                  }}
-                  inputMode="numeric"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* <FieldCategory
-          label="Category"
-          value={form.watch('categoryId')}
-          onValueChange={(value) => form.setValue('categoryId', value)}
-        /> */}
-        <FormField
-          control={form.control}
-          name="categoryId"
-          render={({ field }) => (
-            <CategoryCombobox
-              flow="expense"
-              label="Category"
-              value={field.value}
-              onValueChange={(v) => field.onChange(v)}
-            />
-          )}
-        />
-        <FieldPaidBy<ExpenseFormData> name="paidById" />
-
-        <FieldTransactionAccount<ExpenseFormData> name="transactionAccountId" />
-
-        <FormField
-          control={form.control}
           name="paidAt"
           render={({ field }) => (
             <FormItem>
@@ -198,6 +141,56 @@ export function ExpenseForm({
               </FormControl>
               <FormMessage />
             </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem className="flex-[2]">
+              <FormLabel>Amount *</FormLabel>
+              <FormControl>
+                <Input
+                  value={formatCentsBRL(Number(field.value ?? 0))}
+                  onChange={(e) => {
+                    const cents = parseCurrencyToCents(e.target.value);
+                    field.onChange(cents);
+                  }}
+                  inputMode="numeric"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description *</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter expense description" {...field} disabled={isLoading} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FieldTransactionAccount<ExpenseFormData> name="transactionAccountId" />
+
+        <FieldPaidBy<ExpenseFormData> name="paidById" />
+
+        <FormField
+          control={form.control}
+          name="categoryId"
+          render={({ field }) => (
+            <CategoryCombobox
+              flow="expense"
+              label="Category"
+              value={field.value}
+              onValueChange={(v) => field.onChange(v)}
+            />
           )}
         />
 

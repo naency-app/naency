@@ -15,10 +15,8 @@ export default function Page() {
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <DashboardCards />
 
-          {/* Income vs Expense Pie Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 px-4 lg:px-6">
             <IncomeExpensePieChart />
-
             <CashflowBars
               incomes={incomesData || []}
               expenses={

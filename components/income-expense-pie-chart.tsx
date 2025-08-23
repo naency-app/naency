@@ -107,18 +107,17 @@ export function IncomeExpensePieChart() {
     <Card className="flex flex-col @container/card col-span-1">
       <CardHeader className="items-center pb-0">
         <CardTitle>Income vs Expense</CardTitle>
-        <CardDescription>{formatDateRange()}</CardDescription>
+        <CardDescription>Expenses distribution across categories</CardDescription>
       </CardHeader>
       <CardContent className="flex-1 pb-0">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px] rounded-2xl">
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[300px]">
           <PieChart >
             <ChartTooltip
               cursor={false}
               content={
                 <ChartTooltipContent
-                  hideLabel
                   className="w-[180px]"
-                  formatter={(value, name, item, index) => (
+                  formatter={(value, name, _item, index) => (
                     <>
                       <div
                         className="h-2.5 w-2.5 shrink-0 rounded-[2px] bg-(--color-bg)"
@@ -180,8 +179,8 @@ export function IncomeExpensePieChart() {
         <div className="flex items-center gap-2 leading-none font-medium">
           {netAmount >= 0 ? (
             <>
-              Net positive by {formatCentsBRL(netAmount)}{' '}
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              Net positive by <span className="text-success">{formatCentsBRL(netAmount)}</span>{' '}
+              <TrendingUp className="h-4 w-4 text-success" />
             </>
           ) : (
             <>

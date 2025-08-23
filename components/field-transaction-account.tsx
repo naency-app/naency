@@ -13,8 +13,8 @@ type Props<T extends FieldValues> = {
 
 export function FieldTransactionAccount<T extends FieldValues>({
   name,
-  label = 'Transaction account',
-  placeholder = 'Transaction account',
+  label = 'Bank account',
+  placeholder = 'Select account',
   disabled,
 }: Props<T>) {
   const { control, trigger } = useFormContext<T>();

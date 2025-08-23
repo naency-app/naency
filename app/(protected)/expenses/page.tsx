@@ -5,9 +5,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CreateFormsWrapper } from '@/components/create-forms-wrapper';
 import { DataTable } from '@/components/data-table';
-import DateRangeFilter from '@/components/date-range-filter';
-import { ExpenseForm } from '@/components/expense-form';
 import { ExpenseCards } from '@/components/feature/expense/expense-cards';
+import { ExpenseForm } from '@/components/feature/expense/expense-form';
 import { expenseColumns } from '@/components/feature/expense/expenseColumns';
 import {
   AlertDialog,
@@ -152,7 +151,9 @@ export default function ExpensesPage() {
 
   const getTransactionAccountName = (transactionAccountId: string | null | undefined) => {
     if (!transactionAccountId || !transactionAccountsData) return null;
-    const transactionAccount = transactionAccountsData.find((account) => account.id === transactionAccountId);
+    const transactionAccount = transactionAccountsData.find(
+      (account) => account.id === transactionAccountId
+    );
     return transactionAccount?.name || null;
   };
 
@@ -325,7 +326,6 @@ export default function ExpensesPage() {
                   ...paidBy,
                   createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined,
                 }))}
-
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createExpense.isPending || updateExpense.isPending}
