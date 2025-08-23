@@ -251,8 +251,8 @@ export default function ExpensesPage() {
                           utils.paidBy.getAll.invalidate();
                         }}
                       />
-                      <Button variant="outline" size="sm" onClick={handleCreateExpense}>
-                        <IconPlus className="mr-2 h-4 w-4" />
+                      <Button size="sm" onClick={handleCreateExpense}>
+                        <IconPlus className="size-4" />
                         Add expense
                       </Button>
                     </div>
