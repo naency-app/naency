@@ -1,6 +1,6 @@
 'use client';
 
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
+import { IconCalendar, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge, CategoryBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,13 @@ export const incomeColumns = ({
       accessorKey: 'receivedAt',
       header: 'Received date',
       cell: ({ row }) => {
-        const date = row.getValue('receivedAt') as Date;
-        return formatDate(date);
+        const receivedAt = row.getValue('receivedAt') as string | Date | null | undefined;
+        return (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <IconCalendar className="h-4 w-4" />
+            {formatDate(receivedAt)}
+          </div>
+        );
       },
     },
     {

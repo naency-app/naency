@@ -60,8 +60,8 @@ export function CreatePaidByForm({ onSuccess }: CreatePaidByFormProps) {
   return (
     <>
       <Button onClick={() => setIsOpen(true)} size="sm" variant="outline">
-        <IconPlus className="mr-2 h-4 w-4" />
-        Add paid by
+        <IconPlus className="size-4" />
+        Add payment method
       </Button>
 
       <Drawer

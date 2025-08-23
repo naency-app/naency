@@ -233,7 +233,7 @@ export default function IncomesPage() {
                           utils.transactionAccount.getAll.invalidate();
                         }}
                       />
-                      <Button variant="outline" size="sm" onClick={handleCreateIncome}>
+                      <Button size="sm" onClick={handleCreateIncome}>
                         <IconPlus className="mr-2 h-4 w-4" />
                         Add income
                       </Button>
