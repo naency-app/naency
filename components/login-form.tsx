@@ -34,7 +34,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<'form'>)
   const signWithGoogle = async () => {
     try {
       setIsLoading(true);
-      const { data: session } = await authClient.signIn.social({
+      await authClient.signIn.social({
         provider: 'google',
         callbackURL: '/dashboard',
       });
