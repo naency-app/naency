@@ -37,13 +37,13 @@ import {
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { CreateExpenseInput } from '@/types/trpc';
+import type { CreateExpenseInput, ExpenseFromTRPC } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<CreateExpenseInput | null>(null);
+  const [editingExpense, setEditingExpense] = useState<ExpenseFromTRPC | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [expenseToDelete, setExpenseToDelete] = useState<CreateExpenseInput | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<ExpenseFromTRPC | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
   const { dateRange } = useDateFilter();
@@ -108,24 +108,16 @@ export default function ExpensesPage() {
     },
   });
 
-  const [expenses, setExpenses] = useState<CreateExpenseInput[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseFromTRPC[]>([]);
   const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (expensesData) {
-      setExpenses(
-        expensesData.map((expense) => ({
-          ...expense,
-          categoryId: expense.categoryId || undefined,
-          // removidos: paidById / transactionAccountId
-          paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
-          createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined,
-        }))
-      );
+      setExpenses(expensesData);
     }
   }, [expensesData]);
 
-  const handleExpenseDataChange = (newData: CreateExpenseInput[]) => {
+  const handleExpenseDataChange = (newData: ExpenseFromTRPC[]) => {
     setExpenses(newData);
   };
 
@@ -153,17 +145,17 @@ export default function ExpensesPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleEditExpense = (expense: CreateExpenseInput) => {
+  const handleEditExpense = (expense: ExpenseFromTRPC) => {
     setEditingExpense(expense);
     setIsDrawerOpen(true);
   };
 
-  const handleViewExpense = (expense: CreateExpenseInput) => {
+  const handleViewExpense = (expense: ExpenseFromTRPC) => {
     setEditingExpense(expense);
     setIsDrawerOpen(true);
   };
 
-  const handleDeleteExpense = (expense: CreateExpenseInput) => {
+  const handleDeleteExpense = (expense: ExpenseFromTRPC) => {
     setExpenseToDelete(expense);
     setDeleteDialogOpen(true);
   };
@@ -277,7 +269,7 @@ export default function ExpensesPage() {
                     emptyMessage="No expenses found."
                     onDataChange={handleExpenseDataChange}
                     onRowSelectionChange={handleExpenseSelectionChange}
-                    onRowClick={(row) => handleViewExpense(row.original)}
+                    onRowClick={(row) => handleViewExpense(row.original as ExpenseFromTRPC)}
                   />
                 </CardContent>
               </Card>
@@ -304,16 +296,8 @@ export default function ExpensesPage() {
           <div className="p-4">
             {categoriesData && accountsData && (
               <ExpenseForm
-                expense={editingExpense || undefined}
-                categories={categoriesData.map((cat) => ({
-                  ...cat,
-                  color: cat.color || undefined,
-                  createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined,
-                }))}
-                accounts={accountsData.map((acc) => ({
-                  ...acc,
-                  createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
-                }))}
+                expense={editingExpense as ExpenseFromTRPC | undefined}
+                accounts={accountsData}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createExpense.isPending || updateExpense.isPending}
