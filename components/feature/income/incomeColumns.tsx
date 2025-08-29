@@ -1,21 +1,21 @@
 'use client';
 
-import { IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
+import { IconCalendar, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge, CategoryBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCentsBRL, formatCurrency } from '@/helps/formatCurrency';
+import { formatCentsBRL } from '@/helps/formatCurrency';
 import { formatDate } from '@/helps/formatDate';
-import type { Income } from '@/types/trpc';
+import type { IncomeFromTRPC } from '@/types/trpc';
 
 interface IncomeColumnsProps {
-  handleViewIncome: (income: Income) => void;
-  handleEditIncome: (income: Income) => void;
-  handleDeleteIncome: (income: Income) => void;
+  handleViewIncome: (income: IncomeFromTRPC) => void;
+  handleEditIncome: (income: IncomeFromTRPC) => void;
+  handleDeleteIncome: (income: IncomeFromTRPC) => void;
   getCategoryName: (
     categoryId: string | null | undefined
   ) => { name: string; color: string } | null;
-  getReceivingAccountName: (accountId: string | null | undefined) => string | null;
+  getAccountName: (accountId: string | null | undefined) => string | null; // <-- unificado
 }
 
 export const incomeColumns = ({
@@ -23,14 +23,19 @@ export const incomeColumns = ({
   handleEditIncome,
   handleDeleteIncome,
   getCategoryName,
-  getReceivingAccountName,
-}: IncomeColumnsProps): ColumnDef<Income>[] => [
+  getAccountName,
+}: IncomeColumnsProps): ColumnDef<IncomeFromTRPC>[] => [
     {
       accessorKey: 'receivedAt',
       header: 'Received date',
       cell: ({ row }) => {
-        const date = row.getValue('receivedAt') as Date;
-        return formatDate(date);
+        const receivedAt = row.getValue('receivedAt') as string | Date | null | undefined;
+        return (
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <IconCalendar className="h-4 w-4" />
+            {formatDate(receivedAt)}
+          </div>
+        );
       },
     },
     {
@@ -38,11 +43,7 @@ export const incomeColumns = ({
       header: 'Amount',
       cell: ({ row }) => {
         const amount = row.getValue('amount') as number;
-        return (
-          <div className="font-mono font-semibold text-success">
-            {formatCentsBRL(amount)}
-          </div>
-        );
+        return <div className="font-mono font-semibold text-success">{formatCentsBRL(amount)}</div>;
       },
     },
     {
@@ -55,13 +56,13 @@ export const incomeColumns = ({
       ),
     },
     {
-      accessorKey: 'receivingAccountId',
-      header: 'Receiving account',
+      accessorKey: 'accountId', // <-- unificado
+      header: 'Account',
       cell: ({ row }) => {
-        const receivingAccountId = row.getValue('receivingAccountId') as string | null | undefined;
-        const receivingAccount = getReceivingAccountName(receivingAccountId);
-        if (!receivingAccount) return '-';
-        return <Badge variant="outline">{receivingAccount}</Badge>;
+        const accountId = row.getValue('accountId') as string | null | undefined;
+        const account = getAccountName(accountId);
+        if (!account) return '-';
+        return <Badge variant="outline">{account}</Badge>;
       },
     },
     {
@@ -74,7 +75,6 @@ export const incomeColumns = ({
         return <CategoryBadge color={category.color} name={category.name} />;
       },
     },
-
     {
       id: 'actions',
       header: 'Actions',

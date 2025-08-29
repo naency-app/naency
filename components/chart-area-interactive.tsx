@@ -127,16 +127,13 @@ function fillWindowWithZeros(
     out.push({
       date: key,
       income,
-      expense: -expensePos, // negativo para desenhar para baixo
+      expense: -expensePos,
       net: income - expensePos,
     });
   }
   return out;
 }
 
-/* =========================
-   Componente
-   ========================= */
 export function CashflowBars({
   incomes,
   expenses,

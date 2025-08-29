@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
-import { FieldReceivingAccount } from '@/components/field-receiving-account';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -21,15 +20,22 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
-import type { Category, Income } from '@/types/trpc';
+import type { AccountFromTRPC, IncomeFromTRPC } from '@/types/trpc';
 
 const incomeSchema = z.object({
   description: z.string().min(1, 'Description is required'),
-  amount: z.number().min(1, 'Amount is required'),
+  amount: z.number().min(1, 'Amount is required'), // centavos
   categoryId: z.string().uuid().nullable().optional(),
-  receivingAccountId: z.string().uuid().nullable().optional(),
+  accountId: z.string().uuid({ message: 'Select an account' }), // <-- unificado (obrigatório)
   receivedAt: z.string().optional(),
 });
 
@@ -37,20 +43,27 @@ type IncomeFormData = z.infer<typeof incomeSchema>;
 
 type ProcessedIncomeData = {
   description: string;
-  amount: number;
+  amount: number; // centavos
   categoryId?: string | null;
-  receivingAccountId?: string | null;
+  accountId: string; // <-- unificado
   receivedAt?: Date;
 };
 
 interface IncomeFormProps {
-  income?: Income;
+  income?: IncomeFromTRPC;
+  accounts: AccountFromTRPC[];
   onSubmit: (data: ProcessedIncomeData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: IncomeFormProps) {
+export function IncomeForm({
+  income,
+  accounts,
+  onSubmit,
+  onCancel,
+  isLoading = false,
+}: IncomeFormProps) {
   const [date, setDate] = useState<Date | undefined>(
     income?.receivedAt ? new Date(income.receivedAt) : new Date()
   );
@@ -61,16 +74,14 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
       description: income?.description ?? '',
       amount: income?.amount ?? 0,
       categoryId: income?.categoryId ?? null,
-      receivingAccountId: income?.receivingAccountId ?? null,
-      receivedAt: income?.receivedAt ? income.receivedAt.toISOString() : undefined,
+      accountId: income?.accountId ?? undefined, // requerido
+      receivedAt: income?.receivedAt ? new Date(income.receivedAt).toISOString() : undefined,
     },
     mode: 'onChange',
   });
 
   useEffect(() => {
-    if (date) {
-      form.setValue('receivedAt', date.toISOString());
-    }
+    if (date) form.setValue('receivedAt', date.toISOString());
   }, [date, form]);
 
   const handleFormSubmit = async (data: IncomeFormData) => {
@@ -78,15 +89,10 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
       description: data.description,
       amount: data.amount,
       categoryId: data.categoryId || undefined,
-      receivingAccountId: data.receivingAccountId || undefined,
+      accountId: data.accountId,
       receivedAt: data.receivedAt ? new Date(data.receivedAt) : undefined,
     };
-
-    try {
-      await onSubmit(cleanedData);
-    } catch (error) {
-      console.error('Error in form submission:', error);
-    }
+    await onSubmit(cleanedData);
   };
 
   return (
@@ -95,7 +101,7 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
         <FormField
           control={form.control}
           name="receivedAt"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>Received Date</FormLabel>
               <FormControl>
@@ -129,6 +135,7 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="amount"
@@ -138,10 +145,7 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
               <FormControl>
                 <Input
                   value={formatCentsBRL(Number(field.value ?? 0))}
-                  onChange={(e) => {
-                    const cents = parseCurrencyToCents(e.target.value);
-                    field.onChange(cents);
-                  }}
+                  onChange={(e) => field.onChange(parseCurrencyToCents(e.target.value))}
                   inputMode="numeric"
                 />
               </FormControl>
@@ -149,6 +153,7 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="description"
@@ -163,8 +168,39 @@ export function IncomeForm({ income, onSubmit, onCancel, isLoading = false }: In
           )}
         />
 
-        <FieldReceivingAccount name="receivingAccountId" />
+        {/* Account (unificado) */}
+        <FormField
+          control={form.control}
+          name="accountId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account *</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isLoading || accounts.length === 0}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={accounts.length ? 'Select an account' : 'No accounts available'}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
+        {/* Category (mantida) */}
         <FormField
           control={form.control}
           name="categoryId"

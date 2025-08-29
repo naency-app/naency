@@ -37,13 +37,13 @@ import {
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { Expense } from '@/types/trpc';
+import type { CreateExpenseInput } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editingExpense, setEditingExpense] = useState<CreateExpenseInput | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
+  const [expenseToDelete, setExpenseToDelete] = useState<CreateExpenseInput | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
   const { dateRange } = useDateFilter();
@@ -52,9 +52,8 @@ export default function ExpensesPage() {
     from: dateRange.from,
     to: dateRange.to,
   });
-  const { data: categoriesData } = trpc.categories.getAll.useQuery();
-  const { data: paidByData } = trpc.paidBy.getAll.useQuery();
-  const { data: transactionAccountsData } = trpc.transactionAccount.getAll.useQuery();
+  const { data: categoriesData } = trpc.categories.getAll.useQuery(); // retorna ativas por padrão
+  const { data: accountsData } = trpc.accounts.getAll.useQuery(); // <-- NOVO (substitui paidBy/transactionAccounts)
   const utils = trpc.useUtils();
 
   const createExpense = trpc.expenses.create.useMutation({
@@ -109,7 +108,7 @@ export default function ExpensesPage() {
     },
   });
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [expenses, setExpenses] = useState<CreateExpenseInput[]>([]);
   const [selectedExpenses, setSelectedExpenses] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -118,8 +117,7 @@ export default function ExpensesPage() {
         expensesData.map((expense) => ({
           ...expense,
           categoryId: expense.categoryId || undefined,
-          paidById: expense.paidById || undefined,
-          transactionAccountId: expense.transactionAccountId || undefined,
+          // removidos: paidById / transactionAccountId
           paidAt: expense.paidAt ? new Date(expense.paidAt) : undefined,
           createdAt: expense.createdAt ? new Date(expense.createdAt) : undefined,
         }))
@@ -127,7 +125,7 @@ export default function ExpensesPage() {
     }
   }, [expensesData]);
 
-  const handleExpenseDataChange = (newData: Expense[]) => {
+  const handleExpenseDataChange = (newData: CreateExpenseInput[]) => {
     setExpenses(newData);
   };
 
@@ -143,18 +141,11 @@ export default function ExpensesPage() {
     return { name: category?.name || 'No category', color: category?.color || '#000' };
   };
 
-  const getPaidByName = (paidById: string | null | undefined) => {
-    if (!paidById || !paidByData) return null;
-    const paidBy = paidByData.find((paidBy) => paidBy.id === paidById);
-    return paidBy?.name || null;
-  };
-
-  const getTransactionAccountName = (transactionAccountId: string | null | undefined) => {
-    if (!transactionAccountId || !transactionAccountsData) return null;
-    const transactionAccount = transactionAccountsData.find(
-      (account) => account.id === transactionAccountId
-    );
-    return transactionAccount?.name || null;
+  // NOVO: nome da conta unificada
+  const getAccountName = (accountId: string | null | undefined) => {
+    if (!accountId || !accountsData) return null;
+    const acc = accountsData.find((a) => a.id === accountId);
+    return acc?.name || null;
   };
 
   const handleCreateExpense = () => {
@@ -162,17 +153,17 @@ export default function ExpensesPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleEditExpense = (expense: Expense) => {
+  const handleEditExpense = (expense: CreateExpenseInput) => {
     setEditingExpense(expense);
     setIsDrawerOpen(true);
   };
 
-  const handleViewExpense = (expense: Expense) => {
+  const handleViewExpense = (expense: CreateExpenseInput) => {
     setEditingExpense(expense);
     setIsDrawerOpen(true);
   };
 
-  const handleDeleteExpense = (expense: Expense) => {
+  const handleDeleteExpense = (expense: CreateExpenseInput) => {
     setExpenseToDelete(expense);
     setDeleteDialogOpen(true);
   };
@@ -194,12 +185,12 @@ export default function ExpensesPage() {
     }
   };
 
+  // payloads agora usam accountId
   const handleFormSubmit = async (data: {
     name: string;
     amount: number;
     categoryId?: string | null;
-    paidById?: string | null;
-    transactionAccountId?: string | null;
+    accountId: string; // <-- obrigatório
     paidAt?: Date;
   }) => {
     if (editingExpense) {
@@ -208,8 +199,7 @@ export default function ExpensesPage() {
         name: data.name,
         amount: data.amount,
         categoryId: data.categoryId || undefined,
-        paidById: data.paidById || undefined,
-        transactionAccountId: data.transactionAccountId || undefined,
+        accountId: data.accountId,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     } else {
@@ -217,8 +207,7 @@ export default function ExpensesPage() {
         name: data.name,
         amount: data.amount,
         categoryId: data.categoryId || undefined,
-        paidById: data.paidById || undefined,
-        transactionAccountId: data.transactionAccountId || undefined,
+        accountId: data.accountId,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
       });
     }
@@ -248,11 +237,11 @@ export default function ExpensesPage() {
                         context="expense"
                         onSuccess={() => {
                           utils.categories.getAll.invalidate();
-                          utils.paidBy.getAll.invalidate();
+                          utils.accounts.getAll.invalidate(); // <-- substitui paidBy/transactionAccounts
                         }}
                       />
-                      <Button variant="outline" size="sm" onClick={handleCreateExpense}>
-                        <IconPlus className="mr-2 h-4 w-4" />
+                      <Button size="sm" onClick={handleCreateExpense}>
+                        <IconPlus className="size-4" />
                         Add expense
                       </Button>
                     </div>
@@ -265,9 +254,8 @@ export default function ExpensesPage() {
                       handleViewExpense,
                       handleEditExpense,
                       handleDeleteExpense,
-                      getPaidByName,
                       getCategoryName,
-                      getTransactionAccountName,
+                      getAccountName,
                     })}
                     enableDragAndDrop={true}
                     enableSearch={true}
@@ -314,7 +302,7 @@ export default function ExpensesPage() {
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
-            {categoriesData && (
+            {categoriesData && accountsData && (
               <ExpenseForm
                 expense={editingExpense || undefined}
                 categories={categoriesData.map((cat) => ({
@@ -322,9 +310,9 @@ export default function ExpensesPage() {
                   color: cat.color || undefined,
                   createdAt: cat.createdAt ? new Date(cat.createdAt) : undefined,
                 }))}
-                paidBy={paidByData?.map((paidBy) => ({
-                  ...paidBy,
-                  createdAt: paidBy.createdAt ? new Date(paidBy.createdAt) : undefined,
+                accounts={accountsData.map((acc) => ({
+                  ...acc,
+                  createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
                 }))}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}

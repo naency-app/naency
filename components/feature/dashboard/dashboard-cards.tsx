@@ -37,7 +37,7 @@ export function DashboardCards() {
   const isLoadingBalance = isLoadingExpenses || isLoadingIncomes;
 
   return (
-    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
       {/* Card de Total de Incomes */}
       <Card className="@container/card">
         <CardHeader>
@@ -129,7 +129,7 @@ export function DashboardCards() {
       </Card>
 
       {/* Card de Resumo */}
-      <Card className="@container/card">
+      {/* <Card className="@container/card h-[400px] row-span-4">
         <CardHeader>
           <CardDescription>Summary</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
@@ -154,7 +154,7 @@ export function DashboardCards() {
           </div>
           <div className="text-muted-foreground">Percentage of expenses relative to incomes</div>
         </CardFooter>
-      </Card>
+      </Card> */}
     </div>
   );
 }

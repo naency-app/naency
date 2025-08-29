@@ -1,77 +1,158 @@
 import { TRPCError } from '@trpc/server';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { categories } from '@/db/schema';
 import { db } from '../db';
 import { publicProcedure, router } from '../trpc';
 
+/** Helpers */
+async function getCategoryOwned(userId: string, id: string) {
+  const [cat] = await db
+    .select()
+    .from(categories)
+    .where(and(eq(categories.id, id), eq(categories.userId, userId)))
+    .limit(1);
+  return cat ?? null;
+}
+
+async function ensureNoCycle(userId: string, id: string, newParentId?: string | null) {
+  if (!newParentId) return;
+  if (newParentId === id) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Uma categoria não pode ser pai de si mesma',
+    });
+  }
+  // newParentId não pode ser descendente de id
+  const descendants = await db.execute(sql`
+    WITH RECURSIVE tree AS (
+      SELECT id, parent_id FROM categories WHERE id = ${id} AND user_id = ${userId}
+      UNION ALL
+      SELECT c.id, c.parent_id
+      FROM categories c
+      JOIN tree t ON c.parent_id = t.id
+      WHERE c.user_id = ${userId}
+    )
+    SELECT id FROM tree;
+  `);
+  const ids: string[] = descendants.rows?.map((r: any) => r.id) ?? [];
+  if (ids.includes(newParentId)) {
+    throw new TRPCError({ code: 'BAD_REQUEST', message: 'Referência circular detectada' });
+  }
+}
+
 export const categoriesRouter = router({
-  getAll: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
-    return await db.select().from(categories).where(eq(categories.userId, ctx.userId));
-  }),
+  /** Lista simples (ativas por padrão) */
+  getAll: publicProcedure
+    .input(
+      z
+        .object({
+          includeArchived: z.boolean().optional(),
+          flow: z.enum(['expense', 'income']).optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-  // 👈 Nova função para buscar categorias pai (sem parentId)
-  getParentCategories: publicProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) {
-      throw new TRPCError({ code: 'UNAUTHORIZED' });
-    }
-    return await db
-      .select()
-      .from(categories)
-      .where(and(eq(categories.userId, ctx.userId), isNull(categories.parentId)));
-  }),
+      const where = [
+        eq(categories.userId, ctx.userId),
+        ...(input?.flow ? [eq(categories.flow, input.flow)] : []),
+        ...(input?.includeArchived ? [] : [eq(categories.isArchived, false)]),
+      ];
 
-  // 👈 Nova função para buscar subcategorias de uma categoria específica
-  getSubcategories: publicProcedure
-    .input(z.object({ parentId: z.string() }))
-    .query(async ({ input, ctx }) => {
-      if (!ctx.userId) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
-      }
       return await db
         .select()
         .from(categories)
-        .where(and(eq(categories.userId, ctx.userId), eq(categories.parentId, input.parentId)));
+        .where(and(...where));
     }),
 
-  // 👈 Nova função para buscar categorias com suas subcategorias (estrutura hierárquica)
-  getHierarchical: publicProcedure
-    .input(z.object({ flow: z.enum(['expense', 'income']) }).optional())
+  /** Pais (sem parentId) – ativas por padrão */
+  getParentCategories: publicProcedure
+    .input(
+      z
+        .object({
+          includeArchived: z.boolean().optional(),
+          flow: z.enum(['expense', 'income']).optional(),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
-      if (!ctx.userId) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
-      }
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      const baseCondition = eq(categories.userId, ctx.userId);
-      const conditions = [baseCondition];
+      const where = [
+        eq(categories.userId, ctx.userId),
+        isNull(categories.parentId),
+        ...(input?.flow ? [eq(categories.flow, input.flow)] : []),
+        ...(input?.includeArchived ? [] : [eq(categories.isArchived, false)]),
+      ];
 
-      if (input?.flow) {
-        conditions.push(eq(categories.flow, input.flow));
-      }
-
-      const allCategories = await db
+      return await db
         .select()
         .from(categories)
-        .where(and(...conditions));
+        .where(and(...where));
+    }),
 
-      // Organizar em estrutura hierárquica
-      const parentCategories = allCategories.filter((cat) => !cat.parentId);
-      const subcategories = allCategories.filter((cat) => cat.parentId);
+  /** Filhas de um pai – ativas por padrão */
+  getSubcategories: publicProcedure
+    .input(z.object({ parentId: z.string(), includeArchived: z.boolean().optional() }))
+    .query(async ({ input, ctx }) => {
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      return parentCategories.map((parent) => ({
-        ...parent,
-        subcategories: subcategories.filter((sub) => sub.parentId === parent.id),
+      const where = [
+        eq(categories.userId, ctx.userId),
+        eq(categories.parentId, input.parentId),
+        ...(input?.includeArchived ? [] : [eq(categories.isArchived, false)]),
+      ];
+
+      return await db
+        .select()
+        .from(categories)
+        .where(and(...where));
+    }),
+
+  /** Hierarquia (pais + filhas) – ativas por padrão; aceita filtro por flow e includeArchived */
+  getHierarchical: publicProcedure
+    .input(
+      z
+        .object({
+          flow: z.enum(['expense', 'income']).optional(),
+          includeArchived: z.boolean().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      const where = [
+        eq(categories.userId, ctx.userId),
+        ...(input?.flow ? [eq(categories.flow, input.flow)] : []),
+        ...(input?.includeArchived ? [] : [eq(categories.isArchived, false)]),
+      ];
+
+      const all = await db
+        .select()
+        .from(categories)
+        .where(and(...where));
+      const parents = all.filter((c) => !c.parentId);
+      const children = all.filter((c) => c.parentId);
+
+      return parents.map((p) => ({
+        ...p,
+        subcategories: children.filter((s) => s.parentId === p.id),
       }));
     }),
 
-  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input }) => {
-    const result = await db.select().from(categories).where(eq(categories.id, input.id));
-    return result[0];
+  getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input, ctx }) => {
+    if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+    const result = await db
+      .select()
+      .from(categories)
+      .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)));
+    return result[0] ?? null;
   }),
 
+  /** Criar – valida pai (existe, do usuário, não arquivado) e fluxo consistente */
   create: publicProcedure
     .input(
       z.object({
@@ -82,89 +163,178 @@ export const categoriesRouter = router({
       })
     )
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
-      }
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      // 👈 Validação: se parentId for fornecido, verificar se a categoria pai existe
+      let finalFlow = input.flow;
       if (input.parentId) {
-        const parentCategory = await db
-          .select()
-          .from(categories)
-          .where(and(eq(categories.id, input.parentId), eq(categories.userId, ctx.userId)));
-
-        if (parentCategory.length === 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Categoria pai não encontrada',
-          });
-        }
+        const parent = await getCategoryOwned(ctx.userId, input.parentId);
+        if (!parent)
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai não encontrada' });
+        if (parent.isArchived)
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai está arquivada' });
+        // o fluxo da filha segue o do pai
+        finalFlow = parent.flow;
       }
 
-      const result = await db
+      const [row] = await db
         .insert(categories)
         .values({
+          userId: ctx.userId,
           name: input.name,
           color: input.color,
           parentId: input.parentId,
-          flow: input.flow,
-          userId: ctx.userId,
+          flow: finalFlow,
+          isArchived: false,
+          archivedAt: null,
         })
         .returning();
 
-      return result[0];
+      return row;
     }),
 
-  // 👈 Nova função para atualizar categoria (incluindo mudança de hierarquia)
+  /** Atualizar – valida pai, fluxo e previne ciclos */
   update: publicProcedure
     .input(
       z.object({
         id: z.string(),
         name: z.string().min(1).optional(),
         color: z.string().optional(),
-        parentId: z.string().optional(),
-        flow: z.enum(['expense', 'income']).optional(),
+        parentId: z.string().nullable().optional(), // permitir remover pai
+        flow: z.enum(['expense', 'income']).optional(), // só vale se virar pai (root)
       })
     )
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) {
-        throw new TRPCError({ code: 'UNAUTHORIZED' });
-      }
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      // 👈 Validação: se parentId for fornecido, verificar se a categoria pai existe
-      if (input.parentId) {
-        const parentCategory = await db
-          .select()
-          .from(categories)
-          .where(and(eq(categories.id, input.parentId), eq(categories.userId, ctx.userId)));
+      const current = await getCategoryOwned(ctx.userId, input.id);
+      if (!current) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });
 
-        if (parentCategory.length === 0) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Categoria pai não encontrada',
-          });
-        }
-
-        // 👈 Prevenir referência circular (categoria não pode ser pai de si mesma)
-        if (input.parentId === input.id) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Uma categoria não pode ser pai de si mesma',
-          });
+      // Se setar novo pai, valida existência, arquivamento e evita ciclo
+      if (typeof input.parentId !== 'undefined' && input.parentId) {
+        const parent = await getCategoryOwned(ctx.userId, input.parentId);
+        if (!parent)
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai não encontrada' });
+        if (parent.isArchived)
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai está arquivada' });
+        await ensureNoCycle(ctx.userId, input.id, input.parentId);
+        // filha deve herdar fluxo do pai
+        if (current.flow !== parent.flow || (input.flow && input.flow !== parent.flow)) {
+          input.flow = parent.flow;
         }
       }
 
-      const result = await db
+      // Se virar root (parentId null), pode alterar flow (se enviado)
+      if (typeof input.parentId !== 'undefined' && !input.parentId) {
+        // ok – root; se input.flow vier, respeita
+      } else {
+        // se continuar com pai, flow já foi ajustado acima
+        if (typeof input.flow !== 'undefined' && input.parentId) {
+          // já sanado acima, só garantindo consistência
+          const parent = await getCategoryOwned(ctx.userId, input.parentId);
+          if (parent && input.flow && input.flow !== parent.flow) {
+            input.flow = parent.flow;
+          }
+        }
+      }
+
+      const [row] = await db
         .update(categories)
         .set({
-          name: input.name,
-          color: input.color,
-          parentId: input.parentId,
-          flow: input.flow,
+          name: input.name ?? current.name,
+          color: input.color ?? current.color,
+          parentId:
+            typeof input.parentId === 'undefined' ? current.parentId : input.parentId || null,
+          flow: typeof input.flow === 'undefined' ? current.flow : input.flow,
         })
         .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)))
         .returning();
 
-      return result[0];
+      return row;
+    }),
+
+  /** Arquivar – se cascade=false, bloqueia se houver descendentes ativos; se true, arquiva descendentes via CTE */
+  archive: publicProcedure
+    .input(z.object({ id: z.string(), cascade: z.boolean().optional().default(false) }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      const cat = await getCategoryOwned(ctx.userId, input.id);
+      if (!cat) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });
+      if (cat.isArchived) return { success: true }; // já arquivada
+
+      if (!input.cascade) {
+        const q = await db.execute(sql`
+          WITH RECURSIVE tree AS (
+            SELECT id, parent_id, is_archived
+            FROM categories
+            WHERE id = ${input.id} AND user_id = ${ctx.userId}
+            UNION ALL
+            SELECT c.id, c.parent_id, c.is_archived
+            FROM categories c
+            JOIN tree t ON c.parent_id = t.id
+            WHERE c.user_id = ${ctx.userId}
+          )
+          SELECT COUNT(*)::int AS cnt FROM tree WHERE id <> ${input.id} AND is_archived = false;
+        `);
+
+        const cnt = Number(q.rows?.[0]?.cnt ?? 0);
+        if (cnt > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Existe(m) subcategoria(s) ativa(s). Use cascade=true para arquivar tudo.',
+          });
+        }
+        await db
+          .update(categories)
+          .set({ isArchived: true, archivedAt: sql`now()` })
+          .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)));
+        return { success: true };
+      }
+
+      // cascade = true: arquiva toda a subárvore
+      await db.execute(sql`
+        WITH RECURSIVE tree AS (
+          SELECT id, parent_id FROM categories WHERE id = ${input.id} AND user_id = ${ctx.userId}
+          UNION ALL
+          SELECT c.id, c.parent_id
+          FROM categories c
+          JOIN tree t ON c.parent_id = t.id
+          WHERE c.user_id = ${ctx.userId}
+        )
+        UPDATE categories
+        SET is_archived = true, archived_at = now()
+        WHERE user_id = ${ctx.userId} AND id IN (SELECT id FROM tree);
+      `);
+
+      return { success: true };
+    }),
+
+  /** Reativar – só permite se o pai (se existir) estiver ativo */
+  unarchive: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      const cat = await getCategoryOwned(ctx.userId, input.id);
+      if (!cat) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });
+
+      if (cat.parentId) {
+        const parent = await getCategoryOwned(ctx.userId, cat.parentId);
+        if (!parent)
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai não encontrada' });
+        if (parent.isArchived) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Não é possível reativar: o pai está arquivado',
+          });
+        }
+      }
+
+      await db
+        .update(categories)
+        .set({ isArchived: false, archivedAt: null })
+        .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)));
+
+      return { success: true };
     }),
 });

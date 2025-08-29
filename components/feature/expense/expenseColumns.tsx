@@ -11,25 +11,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { formatCentsBRL } from '@/helps/formatCurrency';
 import { formatDate } from '@/helps/formatDate';
-import type { Expense } from '@/types/trpc';
+import type { ExpenseFromTRPC } from '@/types/trpc';
 
 export const expenseColumns = ({
   handleViewExpense,
   handleEditExpense,
   handleDeleteExpense,
-  getPaidByName,
+  getAccountName,
   getCategoryName,
-  getTransactionAccountName,
 }: {
-  handleViewExpense: (expense: Expense) => void;
-  handleEditExpense: (expense: Expense) => void;
-  handleDeleteExpense: (expense: Expense) => void;
-  getPaidByName: (paidById: string | null | undefined) => string | null;
+  handleViewExpense: (expense: ExpenseFromTRPC) => void;
+  handleEditExpense: (expense: ExpenseFromTRPC) => void;
+  handleDeleteExpense: (expense: ExpenseFromTRPC) => void;
+  getAccountName: (accountId: string | null | undefined) => string | null;
   getCategoryName: (
     categoryId: string | null | undefined
   ) => { name: string; color: string } | null;
-  getTransactionAccountName: (transactionAccountId: string | null | undefined) => string | null;
-}): ColumnDef<Expense>[] => {
+}): ColumnDef<ExpenseFromTRPC>[] => {
   return [
     {
       accessorKey: 'paidAt',
@@ -49,11 +47,7 @@ export const expenseColumns = ({
       header: 'Amount',
       cell: ({ row }) => {
         const amount = row.getValue('amount') as number;
-        return (
-          <div className="font-mono font-semibold text-destructive">
-            {formatCentsBRL(amount)}
-          </div>
-        );
+        return <div className="font-mono font-semibold text-destructive">{formatCentsBRL(amount)}</div>;
       },
     },
     {
@@ -65,24 +59,15 @@ export const expenseColumns = ({
         </div>
       ),
     },
+    // ---- NOVO: conta unificada ----
     {
-      accessorKey: 'transactionAccountId',
-      header: 'Bank account',
+      accessorKey: 'accountId',
+      header: 'Account',
       cell: ({ row }) => {
-        const transactionAccountId = row.getValue('transactionAccountId') as string | null | undefined;
-        const transactionAccount = getTransactionAccountName(transactionAccountId);
-        if (!transactionAccount) return '-';
-        return <Badge variant="outline">{transactionAccount}</Badge>;
-      },
-    },
-    {
-      accessorKey: 'paidById',
-      header: 'Payment method',
-      cell: ({ row }) => {
-        const paidById = row.getValue('paidById') as string | null | undefined;
-        const paidBy = getPaidByName(paidById);
-        if (!paidBy) return '-';
-        return <Badge variant="outline">{paidBy}</Badge>;
+        const accountId = row.getValue('accountId') as string | null | undefined;
+        const account = getAccountName(accountId);
+        if (!account) return '-';
+        return <Badge variant="outline">{account}</Badge>;
       },
     },
     {
@@ -95,8 +80,6 @@ export const expenseColumns = ({
         return <CategoryBadge color={category.color} name={category.name} />;
       },
     },
-
-
     {
       id: 'actions',
       header: 'Actions',

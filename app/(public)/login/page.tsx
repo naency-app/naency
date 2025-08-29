@@ -12,7 +12,7 @@ export default function LoginPage() {
             <div className="bg-transparent  flex size-6 items-center justify-center rounded-md">
               <IconTableFilled className="size-6 text-primary" />
             </div>
-            Næncye
+            Næncy
           </a>
         </div>
         <div className="flex flex-1 items-center justify-center">

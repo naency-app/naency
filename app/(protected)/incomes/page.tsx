@@ -30,7 +30,7 @@ import {
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { Category, Income } from '@/types/trpc';
+import type { Income } from '@/types/trpc';
 
 export default function IncomesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -46,7 +46,7 @@ export default function IncomesPage() {
     to: dateRange.to,
   });
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
-  const { data: receivingAccountsData } = trpc.transactionAccount.getAll.useQuery();
+  const { data: accountsData } = trpc.accounts.getAll.useQuery(); // <-- unificado
   const utils = trpc.useUtils();
 
   const createIncome = trpc.incomes.create.useMutation({
@@ -57,9 +57,7 @@ export default function IncomesPage() {
       setIsDrawerOpen(false);
       setEditingIncome(null);
     },
-    onError: (error) => {
-      toast.error(`Error creating income: ${error.message}`);
-    },
+    onError: (error) => toast.error(`Error creating income: ${error.message}`),
   });
 
   const updateIncome = trpc.incomes.update.useMutation({
@@ -70,9 +68,7 @@ export default function IncomesPage() {
       setIsDrawerOpen(false);
       setEditingIncome(null);
     },
-    onError: (error) => {
-      toast.error(`Error updating income: ${error.message}`);
-    },
+    onError: (error) => toast.error(`Error updating income: ${error.message}`),
   });
 
   const deleteIncome = trpc.incomes.delete.useMutation({
@@ -83,9 +79,7 @@ export default function IncomesPage() {
       setDeleteDialogOpen(false);
       setIncomeToDelete(null);
     },
-    onError: (error) => {
-      toast.error(`Error deleting income: ${error.message}`);
-    },
+    onError: (error) => toast.error(`Error deleting income: ${error.message}`),
   });
 
   const deleteManyIncomes = trpc.incomes.deleteMany.useMutation({
@@ -96,9 +90,7 @@ export default function IncomesPage() {
       setBulkDeleteDialogOpen(false);
       setSelectedIncomes({});
     },
-    onError: (error) => {
-      toast.error(`Error deleting incomes: ${error.message}`);
-    },
+    onError: (error) => toast.error(`Error deleting incomes: ${error.message}`),
   });
 
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -110,7 +102,7 @@ export default function IncomesPage() {
         incomesData.map((income) => ({
           ...income,
           categoryId: income.categoryId || undefined,
-          receivingAccountId: income.receivingAccountId || undefined,
+          // unificado: sem receivingAccountId
           receivedAt: income.receivedAt ? new Date(income.receivedAt) : new Date(),
           createdAt: income.createdAt ? new Date(income.createdAt) : undefined,
         }))
@@ -118,13 +110,9 @@ export default function IncomesPage() {
     }
   }, [incomesData]);
 
-  const handleIncomeDataChange = (newData: Income[]) => {
-    setIncomes(newData);
-  };
-
-  const handleIncomeSelectionChange = (selection: Record<string, boolean>) => {
+  const handleIncomeDataChange = (newData: Income[]) => setIncomes(newData);
+  const handleIncomeSelectionChange = (selection: Record<string, boolean>) =>
     setSelectedIncomes(selection);
-  };
 
   const selectedIncomesCount = Object.values(selectedIncomes).filter(Boolean).length;
 
@@ -134,12 +122,10 @@ export default function IncomesPage() {
     return { name: category?.name || 'No category', color: category?.color || '#000' };
   };
 
-  const getReceivingAccountName = (receivingAccountId: string | null | undefined) => {
-    if (!receivingAccountId || !receivingAccountsData) return null;
-    const receivingAccount = receivingAccountsData.find(
-      (account) => account.id === receivingAccountId
-    );
-    return receivingAccount?.name || null;
+  const getAccountName = (accountId: string | null | undefined) => {
+    if (!accountId || !accountsData) return null;
+    const acc = accountsData.find((a) => a.id === accountId);
+    return acc?.name || null;
   };
 
   const handleCreateIncome = () => {
@@ -162,28 +148,23 @@ export default function IncomesPage() {
     setDeleteDialogOpen(true);
   };
 
-  const handleBulkDelete = () => {
-    setBulkDeleteDialogOpen(true);
-  };
+  const handleBulkDelete = () => setBulkDeleteDialogOpen(true);
 
   const confirmDeleteIncome = async () => {
-    if (incomeToDelete) {
-      await deleteIncome.mutateAsync({ id: incomeToDelete.id });
-    }
+    if (incomeToDelete) await deleteIncome.mutateAsync({ id: incomeToDelete.id });
   };
 
   const confirmBulkDelete = async () => {
     const selectedIds = Object.keys(selectedIncomes).filter((id) => selectedIncomes[id]);
-    if (selectedIds.length > 0) {
-      await deleteManyIncomes.mutateAsync({ ids: selectedIds });
-    }
+    if (selectedIds.length > 0) await deleteManyIncomes.mutateAsync({ ids: selectedIds });
   };
 
+  // payloads agora usam accountId (obrigatório)
   const handleFormSubmit = async (data: {
     description: string;
     amount: number;
     categoryId?: string | null;
-    receivingAccountId?: string | null;
+    accountId: string; // <-- obrigatório
     receivedAt?: Date;
   }) => {
     if (editingIncome) {
@@ -192,7 +173,7 @@ export default function IncomesPage() {
         description: data.description,
         amount: data.amount,
         categoryId: data.categoryId || undefined,
-        receivingAccountId: data.receivingAccountId || undefined,
+        accountId: data.accountId,
         receivedAt: data.receivedAt ? data.receivedAt.toISOString() : undefined,
       });
     } else {
@@ -200,7 +181,7 @@ export default function IncomesPage() {
         description: data.description,
         amount: data.amount,
         categoryId: data.categoryId || undefined,
-        receivingAccountId: data.receivingAccountId || undefined,
+        accountId: data.accountId,
         receivedAt: data.receivedAt ? data.receivedAt.toISOString() : undefined,
       });
     }
@@ -230,10 +211,10 @@ export default function IncomesPage() {
                         context="income"
                         onSuccess={() => {
                           utils.categories.getAll.invalidate();
-                          utils.transactionAccount.getAll.invalidate();
+                          utils.accounts.getAll.invalidate(); // <-- unificado
                         }}
                       />
-                      <Button variant="outline" size="sm" onClick={handleCreateIncome}>
+                      <Button size="sm" onClick={handleCreateIncome}>
                         <IconPlus className="mr-2 h-4 w-4" />
                         Add income
                       </Button>
@@ -248,7 +229,7 @@ export default function IncomesPage() {
                       handleEditIncome,
                       handleDeleteIncome,
                       getCategoryName,
-                      getReceivingAccountName,
+                      getAccountName, // <-- unificado
                     })}
                     enableDragAndDrop={true}
                     enableSearch={true}
@@ -295,9 +276,13 @@ export default function IncomesPage() {
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4">
-            {categoriesData && (
+            {categoriesData && accountsData && (
               <IncomeForm
                 income={editingIncome || undefined}
+                accounts={accountsData.map((acc) => ({
+                  ...acc,
+                  createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
+                }))}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createIncome.isPending || updateIncome.isPending}

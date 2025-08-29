@@ -8,8 +8,9 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
-import { FieldPaidBy } from '@/components/field-paid-by';
-import { FieldTransactionAccount } from '@/components/field-transaction-account';
+// REMOVIDOS:
+// import { FieldPaidBy } from '@/components/field-paid-by';
+// import { FieldTransactionAccount } from '@/components/field-transaction-account';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
@@ -22,16 +23,22 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
-import type { Category, Expense } from '@/types/trpc';
+import type { AccountFromTRPC, CategoryFromTRPC, ExpenseFromTRPC } from '@/types/trpc';
 
 const expenseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  amount: z.number().min(1, 'Amount is required'), // Agora aceita valores como 589734 (centavos)
+  amount: z.number().min(1, 'Amount is required'), // em centavos
   categoryId: z.string().uuid().nullable().optional(),
-  paidById: z.string().uuid().nullable().optional(),
-  transactionAccountId: z.string().uuid().nullable().optional(),
+  accountId: z.string().uuid({ message: 'Select an account' }), // <-- NOVO (obrigatório)
   paidAt: z.string().optional(),
 });
 
@@ -39,18 +46,17 @@ type ExpenseFormData = z.infer<typeof expenseSchema>;
 
 type ProcessedExpenseData = {
   name: string;
-  amount: number;
+  amount: number; // centavos
   categoryId?: string | null;
-  paidById?: string | null;
-  transactionAccountId?: string | null;
+  accountId: string; // <-- NOVO
   paidAt?: Date;
   parentCategoryId?: string | null;
 };
 
 interface ExpenseFormProps {
-  expense?: Expense;
-  categories: Category[];
-  paidBy?: Array<{ id: string; name: string; createdAt?: Date }>;
+  expense?: ExpenseFromTRPC;
+
+  accounts: AccountFromTRPC[];
   onSubmit: (data: ProcessedExpenseData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
@@ -58,8 +64,8 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({
   expense,
-  categories,
-  paidBy,
+
+  accounts,
   onSubmit,
   onCancel,
   isLoading = false,
@@ -74,9 +80,8 @@ export function ExpenseForm({
       name: expense?.name ?? '',
       amount: expense?.amount ?? 0,
       categoryId: expense?.categoryId ?? null,
-      paidById: expense?.paidById ?? null,
-      transactionAccountId: expense?.transactionAccountId ?? null,
-      paidAt: expense?.paidAt ? expense.paidAt.toISOString() : undefined,
+      accountId: expense?.accountId ?? undefined, // requerido; ficará inválido até escolher
+      paidAt: expense?.paidAt ? new Date(expense.paidAt).toISOString() : undefined,
     },
     mode: 'onChange',
   });
@@ -92,8 +97,7 @@ export function ExpenseForm({
       name: data.name,
       amount: data.amount,
       categoryId: data.categoryId || undefined,
-      paidById: data.paidById || undefined,
-      transactionAccountId: data.transactionAccountId || undefined,
+      accountId: data.accountId, // <-- NOVO
       paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
     };
 
@@ -103,6 +107,7 @@ export function ExpenseForm({
       console.error('Error in form submission:', error);
     }
   };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
@@ -143,6 +148,7 @@ export function ExpenseForm({
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="amount"
@@ -163,6 +169,7 @@ export function ExpenseForm({
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="name"
@@ -177,10 +184,38 @@ export function ExpenseForm({
           )}
         />
 
-        <FieldTransactionAccount<ExpenseFormData> name="transactionAccountId" />
+        <FormField
+          control={form.control}
+          name="accountId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Account *</FormLabel>
+              <Select
+                value={field.value}
+                onValueChange={field.onChange}
+                disabled={isLoading || accounts.length === 0}
+              >
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={accounts.length ? 'Select an account' : 'No accounts available'}
+                    />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {accounts.map((acc) => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-        <FieldPaidBy<ExpenseFormData> name="paidById" />
-
+        {/* Categoria (mantida) */}
         <FormField
           control={form.control}
           name="categoryId"
