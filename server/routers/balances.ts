@@ -7,7 +7,8 @@ import { protectedProcedure, router } from '../trpc';
 
 export const balancesRouter = router({
   getAll: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) {
+    const userId = ctx.userId;
+    if (!userId) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
@@ -21,9 +22,8 @@ export const balancesRouter = router({
         a.currency
       FROM account_balances ab
       JOIN accounts a ON a.id = ab.account_id
-      WHERE a.user_id = $1 AND a.is_archived = false
-      ORDER BY a.name`,
-      [ctx.userId]
+      WHERE a.user_id = '${userId}' AND a.is_archived = false
+      ORDER BY a.name`
     );
 
     return result.rows;
@@ -32,7 +32,8 @@ export const balancesRouter = router({
   getByAccount: protectedProcedure
     .input(z.object({ accountId: z.string() }))
     .query(async ({ input, ctx }) => {
-      if (!ctx.userId) {
+      const userId = ctx.userId;
+      if (!userId) {
         throw new TRPCError({ code: 'UNAUTHORIZED' });
       }
 
@@ -53,15 +54,15 @@ export const balancesRouter = router({
           a.currency
         FROM account_balances ab
         JOIN accounts a ON a.id = ab.account_id
-        WHERE a.id = $1 AND a.user_id = $2`,
-        [input.accountId, ctx.userId]
+        WHERE a.id = '${input.accountId}' AND a.user_id = '${userId}'`
       );
 
       return result.rows[0];
     }),
 
   getTotalBalance: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.userId) {
+    const userId = ctx.userId;
+    if (!userId) {
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
@@ -72,10 +73,9 @@ export const balancesRouter = router({
         a.currency
       FROM account_balances ab
       JOIN accounts a ON a.id = ab.account_id
-      WHERE a.user_id = $1 AND a.is_archived = false
+      WHERE a.user_id = '${userId}' AND a.is_archived = false
       GROUP BY a.currency
-      ORDER BY a.currency`,
-      [ctx.userId]
+      ORDER BY a.currency`
     );
 
     return result.rows;

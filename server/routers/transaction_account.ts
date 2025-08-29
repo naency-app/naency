@@ -1,7 +1,7 @@
 import { TRPCError } from '@trpc/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/drizzle';
-import { transactionAccounts } from '@/db/schema';
+import { accounts } from '@/db/schema';
 import { protectedProcedure, router } from '../trpc';
 
 export const transactionAccountRouter = router({
@@ -10,9 +10,6 @@ export const transactionAccountRouter = router({
       throw new TRPCError({ code: 'UNAUTHORIZED' });
     }
 
-    return await db
-      .select()
-      .from(transactionAccounts)
-      .where(eq(transactionAccounts.userId, ctx.userId));
+    return await db.select().from(accounts).where(eq(accounts.userId, ctx.userId));
   }),
 });

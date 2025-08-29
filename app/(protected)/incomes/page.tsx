@@ -30,13 +30,13 @@ import {
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { Income } from '@/types/trpc';
+import type { IncomeFromTRPC } from '@/types/trpc';
 
 export default function IncomesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [editingIncome, setEditingIncome] = useState<Income | null>(null);
+  const [editingIncome, setEditingIncome] = useState<IncomeFromTRPC | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [incomeToDelete, setIncomeToDelete] = useState<Income | null>(null);
+  const [incomeToDelete, setIncomeToDelete] = useState<IncomeFromTRPC | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const { isMobile } = useSidebar();
   const { dateRange } = useDateFilter();
@@ -93,24 +93,18 @@ export default function IncomesPage() {
     onError: (error) => toast.error(`Error deleting incomes: ${error.message}`),
   });
 
-  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [incomes, setIncomes] = useState<IncomeFromTRPC[]>([]);
   const [selectedIncomes, setSelectedIncomes] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (incomesData) {
       setIncomes(
-        incomesData.map((income) => ({
-          ...income,
-          categoryId: income.categoryId || undefined,
-          // unificado: sem receivingAccountId
-          receivedAt: income.receivedAt ? new Date(income.receivedAt) : new Date(),
-          createdAt: income.createdAt ? new Date(income.createdAt) : undefined,
-        }))
+        incomesData
       );
     }
   }, [incomesData]);
 
-  const handleIncomeDataChange = (newData: Income[]) => setIncomes(newData);
+  const handleIncomeDataChange = (newData: IncomeFromTRPC[]) => setIncomes(newData);
   const handleIncomeSelectionChange = (selection: Record<string, boolean>) =>
     setSelectedIncomes(selection);
 
@@ -133,17 +127,17 @@ export default function IncomesPage() {
     setIsDrawerOpen(true);
   };
 
-  const handleEditIncome = (income: Income) => {
+  const handleEditIncome = (income: IncomeFromTRPC) => {
     setEditingIncome(income);
     setIsDrawerOpen(true);
   };
 
-  const handleViewIncome = (income: Income) => {
+  const handleViewIncome = (income: IncomeFromTRPC) => {
     setEditingIncome(income);
     setIsDrawerOpen(true);
   };
 
-  const handleDeleteIncome = (income: Income) => {
+  const handleDeleteIncome = (income: IncomeFromTRPC) => {
     setIncomeToDelete(income);
     setDeleteDialogOpen(true);
   };
@@ -279,10 +273,7 @@ export default function IncomesPage() {
             {categoriesData && accountsData && (
               <IncomeForm
                 income={editingIncome || undefined}
-                accounts={accountsData.map((acc) => ({
-                  ...acc,
-                  createdAt: acc.createdAt ? new Date(acc.createdAt) : undefined,
-                }))}
+                accounts={accountsData}
                 onSubmit={handleFormSubmit}
                 onCancel={handleDrawerClose}
                 isLoading={createIncome.isPending || updateIncome.isPending}
