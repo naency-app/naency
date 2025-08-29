@@ -37,7 +37,7 @@ export function CreateCategoryForm({
 }: CreateCategoryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [flow, setFlow] = useState<'expense' | 'income'>(defaultFlow);
-  const [level, setLevel] = useState<Level>('group'); // <-- novo: define se cria Grupo ou Subcategoria
+  const [level, setLevel] = useState<Level>('subcategory'); // <-- novo: define se cria Grupo ou Subcategoria
   const [name, setName] = useState('');
   const [color, setColor] = useState('#3b82f6');
   const [parentId, setParentId] = useState<string>(''); // só usado quando level='subcategory'
@@ -162,8 +162,8 @@ export function CreateCategoryForm({
                 <Label>Category level</Label>
                 <Tabs defaultValue={level} value={level} onValueChange={(v) => setLevel((v as Level) || 'group')} className="items-center w-full">
                   <TabsList className='w-full'>
-                    <TabsTrigger value="group" className="flex-1">Group</TabsTrigger>
                     <TabsTrigger value="subcategory" className="flex-1">Subcategory</TabsTrigger>
+                    <TabsTrigger value="group" className="flex-1">Group</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>

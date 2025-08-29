@@ -2,123 +2,277 @@
 
 import { IconBuildingBank, IconPlus, IconWallet } from '@tabler/icons-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatCurrency } from '@/helps/formatCurrency';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { formatCentsBRL } from '@/helps/formatCurrency';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
+import { CardStack } from './card-stack';
+import { Label } from './ui/label';
+
+export const Highlight = ({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => {
+  return (
+    <span
+      className={cn(
+        'font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-700/[0.2] dark:text-emerald-500 px-1 py-0.5',
+        className
+      )}
+    >
+      {children}
+    </span>
+  );
+};
 
 export function BankAccountCard() {
+  const utils = trpc.useUtils();
+  const isMobile = useIsMobile();
+  // QUERY: contas com saldo
+  const { data: accounts, isLoading } = trpc.accounts.getAllWithBalance.useQuery({
+    includeArchived: false,
+  });
 
-  const { data: accounts, isLoading } = trpc.transactionAccount.getAll.useQuery();
-  console.log(accounts);
-  const totalBalance =
-    accounts?.reduce((sum: number, account: any) => {
-      return sum + account.balance;
-    }, 0) || 0;
+  // STATE: dialog de criação
+  const [openCreate, setOpenCreate] = useState(false);
+  const [name, setName] = useState('');
+  const [type, setType] = useState<'bank' | 'cash' | 'credit_card' | 'ewallet' | 'other'>('bank');
+  const [currency, setCurrency] = useState('BRL');
+
+  // MUTATION: criar conta
+  const createAccount = trpc.accounts.create.useMutation({
+    onSuccess: () => {
+      toast.success('Account created!');
+      utils.accounts.getAllWithBalance.invalidate();
+      setOpenCreate(false);
+      setName('');
+      setType('bank');
+      setCurrency('BRL');
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Error creating account');
+    },
+  });
+
+  const activeCount = accounts?.filter((a) => !a.isArchived).length ?? 0;
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('Please enter the account name');
+      return;
+    }
+    createAccount.mutate({
+      name: name.trim(),
+      type,
+      currency: currency.toUpperCase() as 'BRL' | string,
+    });
+  };
 
   return (
-    <Card className="w-full h-full">
-      <CardHeader>
-        <CardTitle>Bank accounts</CardTitle>
-      </CardHeader>
+    <>
+      <Card className="h-full w-full">
+        <CardHeader>
+          <CardTitle>Bank accounts</CardTitle>
+          <CardDescription>Overview of your balances</CardDescription>
+        </CardHeader>
 
-      <CardContent className="space-y-6 h-full">
+        <CardContent className="h-full space-y-6">
+          <CardStack />
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-            <CardDescription>Across all accounts</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">{formatCurrency(totalBalance.toString())}</div>
-            <Badge variant="secondary" className="mt-2">
-              {accounts?.length || 0} accounts
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Quick Actions</h3>
-          <div className="space-y-2">
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              <IconPlus className="h-4 w-4 mr-2" />
-              New Account
-            </Button>
-            <Button variant="outline" size="sm" className="w-full justify-start">
-              <IconBuildingBank className="h-4 w-4 mr-2" />
-              Transfer Funds
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Account Stats</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Active Accounts:</span>
-              <span className="font-medium">{accounts?.length || 0}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Total Transactions:</span>
-              <span className="font-medium">0</span>
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Quick Actions</h3>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => setOpenCreate(true)}
+              >
+                <IconPlus className="mr-2 h-4 w-4" />
+                New Account
+              </Button>
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <IconBuildingBank className="mr-2 h-4 w-4" />
+                Transfer Funds
+              </Button>
             </div>
           </div>
-        </div>
 
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">Your accounts</h3>
-
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-3">
-                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-muted rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
-              ))}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Account Stats</h3>
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Active Accounts:</span>
+                <span className="font-medium">{activeCount}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Total Transactions:</span>
+                <span className="font-medium">—</span>
+              </div>
             </div>
-          ) : accounts && accounts.length > 0 ? (
-            <div>
-              {accounts.map((account: any) => (
-                <Card
-                  key={account.id}
-                  className="hover:bg-accent/50 transition-colors cursor-pointer"
-                >
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <IconWallet className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{account.name}</span>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium text-muted-foreground">Your accounts</h3>
+
+            {isLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse">
+                    <CardContent className="p-3">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-muted" />
+                      <div className="h-3 w-1/2 rounded bg-muted" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : accounts && accounts.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {accounts.map((account) => (
+                  <Card
+                    key={account.id}
+                    className="cursor-pointer transition-colors hover:bg-accent/50"
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <IconWallet className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{account.name}</span>
+                            <span className="text-xs capitalize text-muted-foreground">
+                              {account.type.replace('_', ' ')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-mono text-sm">
+                            {formatCentsBRL(account.balance ?? 0)}
+                          </div>
+                          <Badge
+                            variant={account.isArchived ? 'outline' : 'secondary'}
+                            className="ml-auto mt-1 text-xs"
+                          >
+                            {account.isArchived ? 'Archived' : 'Active'}
+                          </Badge>
+                        </div>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        Active
-                      </Badge>
-                    </div>
-                    <div className="mt-2 text-sm text-muted-foreground">
-                      Created {new Date(account.createdAt).toLocaleDateString()}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        Created {new Date(account.createdAt).toLocaleDateString()}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <IconWallet className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No accounts yet</p>
+                  <Button size="sm" className="mt-2" onClick={() => setOpenCreate(true)}>
+                    <IconPlus className="mr-1 h-4 w-4" />
+                    Add Account
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Drawer
+        open={openCreate}
+        onOpenChange={setOpenCreate}
+        direction={isMobile ? 'bottom' : 'right'}
+        dismissible={false}
+      >
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>New account</DrawerTitle>
+          </DrawerHeader>
+
+          <form onSubmit={handleCreate} className="space-y-3 p-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Name *</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex.: Nubank, Carteira, Cartão XP"
+                disabled={createAccount.isPending}
+              />
             </div>
-          ) : (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <IconWallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No accounts yet</p>
-                <Button size="sm" className="mt-2">
-                  <IconPlus className="h-4 w-4 mr-1" />
-                  Add Account
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Type *</Label>
+              <Select
+                value={type}
+                onValueChange={(v) =>
+                  setType(v as 'bank' | 'cash' | 'credit_card' | 'ewallet' | 'other')
+                }
+                disabled={createAccount.isPending}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="credit_card">Credit card</SelectItem>
+                  <SelectItem value="ewallet">E-wallet</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Currency *</Label>
+              <Input
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+                placeholder="BRL"
+                disabled={createAccount.isPending}
+              />
+            </div>
+
+            <DrawerFooter className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpenCreate(false)}
+                disabled={createAccount.isPending}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={createAccount.isPending} className="flex-1">
+                Create
+              </Button>
+            </DrawerFooter>
+          </form>
+        </DrawerContent>
+      </Drawer>
+    </>
   );
 }

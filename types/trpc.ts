@@ -1,39 +1,17 @@
-export type { AppRouter } from '../server/routers/_app';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+import type { AppRouter } from '../server/routers/_app';
 
-export type User = {
-  id: string;
-  name: string;
-  email: string;
-  image?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
+type RouterOutputs = inferRouterOutputs<AppRouter>;
+type RouterInputs = inferRouterInputs<AppRouter>;
 
-export type Category = {
-  id: string;
-  name: string;
-  color?: string | null;
-  flow: 'expense' | 'income';
-  createdAt?: string | Date;
-};
+// Exemplos:
+export type ExpenseFromTRPC = RouterOutputs['expenses']['getAll'][number];
+export type CreateExpenseInput = RouterInputs['expenses']['create'];
 
-export type Expense = {
-  id: string;
-  name: string;
-  amount: number;
-  categoryId?: string;
-  paidById?: string;
-  transactionAccountId?: string;
-  paidAt?: Date;
-  createdAt?: Date;
-};
+export type IncomeFromTRPC = RouterOutputs['incomes']['getAll'][number];
+export type CreateIncomeInput = RouterInputs['incomes']['create'];
 
-export type Income = {
-  id: string;
-  description: string;
-  amount: number;
-  categoryId?: string;
-  receivingAccountId?: string;
-  receivedAt: Date;
-  createdAt?: Date;
-};
+export type AccountWithBalance = RouterOutputs['accounts']['getAllWithBalance'][number];
+export type CategoryFromTRPC = RouterOutputs['categories']['getAll'][number];
+
+export type AccountFromTRPC = RouterOutputs['accounts']['getAll'][number];
