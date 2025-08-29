@@ -64,7 +64,6 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({
   expense,
-
   accounts,
   onSubmit,
   onCancel,
