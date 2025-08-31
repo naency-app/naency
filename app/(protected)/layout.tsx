@@ -4,6 +4,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getServerSession } from '@/lib/get-server-session';
+import { DockApp } from '@/components/Docke';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession();
@@ -23,6 +24,8 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <SiteHeader />
         <NuqsAdapter>{children}</NuqsAdapter>
       </SidebarInset>
+
+      <DockApp />
     </SidebarProvider>
   );
 }
