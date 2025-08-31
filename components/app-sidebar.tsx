@@ -4,6 +4,7 @@ import {
   IconCamera,
   IconCash,
   IconChartBar,
+  IconCreditCardPay,
   IconDashboard,
   IconDatabase,
   IconFileAi,
@@ -32,6 +33,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useSidebarAutoClose } from '@/hooks/use-sidebar-auto-close';
 
 const data = {
   user: {
@@ -48,7 +50,7 @@ const data = {
     {
       title: 'Expenses',
       url: '/expenses',
-      icon: IconListDetails,
+      icon: IconCreditCardPay,
     },
     {
       title: 'Incomes',
@@ -151,6 +153,9 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  // Hook para fechar automaticamente o sidebar mobile quando a rota mudar
+  useSidebarAutoClose();
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
