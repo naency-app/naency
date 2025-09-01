@@ -166,24 +166,36 @@ export default function DatePicker() {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]"
+            className="group bg-background hover:bg-background border-input w-full justify-between px-2 sm:px-3 py-2 sm:py-2.5 font-normal outline-offset-0 outline-none focus-visible:outline-[3px] text-sm sm:text-base"
           >
-            <span className={cn('truncate', !dateRange?.from && 'text-muted-foreground')}>
+            <span className={cn('truncate text-xs sm:text-sm', !dateRange?.from && 'text-muted-foreground')}>
               {dateRange?.from ? (
                 dateRange.to ? (
                   <>
-                    {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                    <span className="sm:hidden">
+                      {format(dateRange.from, 'MM/yyyy')} - {format(dateRange.to, 'MM/yyyy')}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {format(dateRange.from, 'dd/MM/yyyy')} - {format(dateRange.to, 'dd/MM/yyyy')}
+                    </span>
                   </>
                 ) : (
-                  format(dateRange.from, 'dd/MM/yyyy')
+                  <>
+                    <span className="sm:hidden">
+                      {format(dateRange.from, 'MM/yyyy')}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {format(dateRange.from, 'dd/MM/yyyy')}
+                    </span>
+                  </>
                 )
               ) : (
                 'Pick a date range'
               )}
             </span>
             <CalendarIcon
-              size={16}
-              className="text-muted-foreground/80 group-hover:text-foreground shrink-0 transition-colors"
+              size={14}
+              className="text-muted-foreground/80 group-hover:text-foreground shrink-0 transition-colors sm:w-4 sm:h-4"
               aria-hidden="true"
             />
           </Button>
