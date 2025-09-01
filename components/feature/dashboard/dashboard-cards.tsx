@@ -1,5 +1,12 @@
-import { IconTrendingDown, IconTrendingUp, IconWallet } from '@tabler/icons-react';
+import {
+  IconChevronRight,
+  IconTrendingDown,
+  IconTrendingUp,
+  IconWallet,
+} from '@tabler/icons-react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardAction,
@@ -14,6 +21,7 @@ import { trpc } from '@/lib/trpc';
 
 export function DashboardCards() {
   const { dateRange } = useDateFilter();
+  const router = useRouter();
 
   const {
     data: totalExpenses,
@@ -35,6 +43,14 @@ export function DashboardCards() {
 
   const balance = (totalIncomes || 0) - (totalExpenses || 0);
   const isLoadingBalance = isLoadingExpenses || isLoadingIncomes;
+
+  const handleIncomesClick = () => {
+    router.push('/incomes');
+  };
+
+  const handleExpensesClick = () => {
+    router.push('/expenses');
+  };
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
@@ -58,11 +74,10 @@ export function DashboardCards() {
             </Badge>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Total incomes this period <IconTrendingUp className="size-4 text-success" />
-          </div>
-          <div className="text-muted-foreground">Total incomes for the selected period</div>
+        <CardFooter >
+          <Button className="group text-xs " variant="outline" size="sm" onClick={handleIncomesClick}>
+            View details <IconChevronRight className="size-4 group-hover:translate-x-1 transition-all" />
+          </Button>
         </CardFooter>
       </Card>
 
@@ -86,11 +101,10 @@ export function DashboardCards() {
             </Badge>
           </CardAction>
         </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            Total expenses this period <IconTrendingDown className="size-4 text-destructive" />
-          </div>
-          <div className="text-muted-foreground">Total expenses for the selected period</div>
+        <CardFooter >
+          <Button className="group text-xs " variant="outline" size="sm" onClick={handleExpensesClick}>
+            View details <IconChevronRight className="size-4 group-hover:translate-x-1 transition-all" />
+          </Button>
         </CardFooter>
       </Card>
 
