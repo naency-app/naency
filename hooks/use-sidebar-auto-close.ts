@@ -1,22 +1,20 @@
-import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef } from 'react';
 import { useSidebar } from '@/components/ui/sidebar';
 
 export function useSidebarAutoClose() {
   const pathname = usePathname();
-  
-  // Verifica se o hook está disponível (dentro do contexto do SidebarProvider)
-  try {
-    const { isMobile, setOpenMobile } = useSidebar();
+  const prevPathnameRef = useRef(pathname);
+  // Sempre chama o hook - se não estiver no contexto, será undefined
+  const sidebarContext = useSidebar();
 
-    useEffect(() => {
-      // Fecha o sidebar mobile automaticamente quando a rota muda
-      if (isMobile && setOpenMobile) {
-        setOpenMobile(false);
+  useEffect(() => {
+    // Fecha o sidebar mobile automaticamente quando a rota muda
+    if (prevPathnameRef.current !== pathname) {
+      if (sidebarContext?.isMobile && sidebarContext?.setOpenMobile) {
+        sidebarContext.setOpenMobile(false);
       }
-    }, [pathname, isMobile, setOpenMobile]);
-  } catch {
-    // Se o hook não estiver disponível (fora do contexto), não faz nada
-    // Isso pode acontecer durante SSR ou se o componente não estiver dentro do SidebarProvider
-  }
+      prevPathnameRef.current = pathname;
+    }
+  }, [pathname, sidebarContext?.isMobile, sidebarContext?.setOpenMobile]);
 }
