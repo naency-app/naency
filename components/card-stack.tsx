@@ -10,7 +10,7 @@ export const CardStack = ({ offset, scaleFactor }: { offset?: number; scaleFacto
   const CARD_OFFSET = offset || 10;
   const SCALE_FACTOR = scaleFactor || 0.06;
 
-  // Query: contas com saldo
+
   const { data: accounts = [], isLoading } = trpc.accounts.getAllWithBalance.useQuery({
     includeArchived: false,
   });
