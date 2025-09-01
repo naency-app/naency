@@ -62,7 +62,7 @@ export default function DateRangeFilter() {
             defaultMonth={dateRange?.from}
             selected={dateRange}
             onSelect={handleSelect}
-            numberOfMonths={2}
+            numberOfMonths={1}
           />
         </PopoverContent>
       </Popover>

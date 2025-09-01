@@ -6,6 +6,18 @@ import { DayPicker } from 'react-day-picker';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+const Chevron = (props: {
+  className?: string;
+  size?: number;
+  disabled?: boolean;
+  orientation?: 'left' | 'right' | 'up' | 'down';
+}) => {
+  if (props.orientation === 'left') {
+    return <ChevronLeftIcon size={16} {...props} aria-hidden="true" />;
+  }
+  return <ChevronRightIcon size={16} {...props} aria-hidden="true" />;
+};
+
 function Calendar({
   className,
   classNames,
@@ -46,26 +58,16 @@ function Calendar({
       ...acc,
       [key]: classNames?.[key as keyof typeof classNames]
         ? cn(
-            defaultClassNames[key as keyof typeof defaultClassNames],
-            classNames[key as keyof typeof classNames]
-          )
+          defaultClassNames[key as keyof typeof defaultClassNames],
+          classNames[key as keyof typeof classNames]
+        )
         : defaultClassNames[key as keyof typeof defaultClassNames],
     }),
     {} as typeof defaultClassNames
   );
 
   const defaultComponents = {
-    Chevron: (props: {
-      className?: string;
-      size?: number;
-      disabled?: boolean;
-      orientation?: 'left' | 'right' | 'up' | 'down';
-    }) => {
-      if (props.orientation === 'left') {
-        return <ChevronLeftIcon size={16} {...props} aria-hidden="true" />;
-      }
-      return <ChevronRightIcon size={16} {...props} aria-hidden="true" />;
-    },
+    Chevron,
   };
 
   const mergedComponents = {
