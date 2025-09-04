@@ -54,7 +54,6 @@ export function DashboardCards() {
 
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  @xl/main:grid-cols-2 @5xl/main:grid-cols-3">
-      {/* Card de Total de Incomes */}
       <Card className="@container/card">
         <CardHeader>
           <CardDescription>Total Incomes</CardDescription>
@@ -141,34 +140,6 @@ export function DashboardCards() {
           <div className="text-muted-foreground">Incomes minus expenses for the period</div>
         </CardFooter>
       </Card>
-
-      {/* Card de Resumo */}
-      {/* <Card className="@container/card h-[400px] row-span-4">
-        <CardHeader>
-          <CardDescription>Summary</CardDescription>
-          <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-            {isLoadingBalance ? (
-              <div className="h-8 w-24 animate-pulse bg-muted rounded" />
-            ) : (
-              totalIncomes && totalExpenses && totalIncomes > 0
-                ? `${Math.round((totalExpenses / totalIncomes) * 100)}%`
-                : '0%'
-            )}
-          </CardTitle>
-          <CardAction>
-            <Badge variant="outline">
-              <IconTrendingUp />
-              Expense Ratio
-            </Badge>
-          </CardAction>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1.5 text-sm">
-          <div className=" flex gap-2 font-medium items-center">
-            Expense to Income ratio <IconTrendingUp className="size-4" />
-          </div>
-          <div className="text-muted-foreground">Percentage of expenses relative to incomes</div>
-        </CardFooter>
-      </Card> */}
     </div>
   );
 }

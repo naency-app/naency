@@ -340,7 +340,7 @@ export function DataTable<TData>({
   return (
     <div className={`w-full ${className}`}>
       {showToolbar && (
-        <div className="flex items-center justify-between gap-4 p-4">
+        <div className="flex items-center justify-between gap-4 py-4">
           <div className="flex items-center gap-4 flex-1">
             {enableSearch && (
               <div className="flex items-center gap-2">
@@ -379,7 +379,7 @@ export function DataTable<TData>({
                           checked={column.getIsVisible()}
                           onCheckedChange={(value) => column.toggleVisibility(!!value)}
                         >
-                          {column.id}
+                          {column.columnDef.header?.toString()}
                         </DropdownMenuCheckboxItem>
                       );
                     })}
