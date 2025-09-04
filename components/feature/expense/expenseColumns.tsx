@@ -1,14 +1,8 @@
-import { IconCalendar, IconDotsVertical, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
+import { IconCalendar, IconEdit, IconEye, IconTrash } from '@tabler/icons-react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge, CategoryBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+
 import { formatCentsBRL } from '@/helps/formatCurrency';
 import { formatDate } from '@/helps/formatDate';
 import type { ExpenseFromTRPC } from '@/types/trpc';
@@ -84,32 +78,33 @@ export const expenseColumns = ({
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <IconDotsVertical className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => handleViewExpense(row.original)}>
-              <IconEye className="mr-2 h-4 w-4" />
-              View details
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleEditExpense(row.original)}>
-              <IconEdit className="mr-2 h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              variant="destructive"
-              onClick={() => handleDeleteExpense(row.original)}
-            >
-              <IconTrash className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleViewExpense(row.original)}
+            title="View income"
+          >
+            <IconEye className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleEditExpense(row.original)}
+            title="Edit income"
+          >
+            <IconEdit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleDeleteExpense(row.original)}
+            title="Delete income"
+            className="text-destructive hover:text-destructive"
+          >
+            <IconTrash className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ];

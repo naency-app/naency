@@ -235,7 +235,6 @@ export default function ExpensesPage() {
                       getCategoryName,
                       getAccountName,
                     })}
-                    enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search"
                     enableRowSelection={true}

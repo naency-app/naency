@@ -1,6 +1,5 @@
 import { IconTableFilled } from '@tabler/icons-react';
 import Image from 'next/image';
-import { NancyIcon } from '@/components/icons';
 import { LoginForm } from '@/components/login-form';
 
 export default function LoginPage() {
