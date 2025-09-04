@@ -1,15 +1,24 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { IconCalendar, IconChevronDown } from '@tabler/icons-react';
+import { IconCalendar, IconChevronDown, IconCreditCard } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
+import { AccountForm } from '@/components/feature/account/account-form';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import {
   Form,
   FormControl,
@@ -55,6 +64,9 @@ interface IncomeFormProps {
   onSubmit: (data: ProcessedIncomeData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  direction?: 'bottom' | 'right';
 }
 
 export function IncomeForm({
@@ -63,10 +75,14 @@ export function IncomeForm({
   onSubmit,
   onCancel,
   isLoading = false,
+  open,
+  onOpenChange,
+  direction = 'right',
 }: IncomeFormProps) {
   const [date, setDate] = useState<Date | undefined>(
     income?.receivedAt ? new Date(income.receivedAt) : new Date()
   );
+  const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false);
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
@@ -84,6 +100,8 @@ export function IncomeForm({
     if (date) form.setValue('receivedAt', date.toISOString());
   }, [date, form]);
 
+  // User chooses when to open account drawer via button; no auto-open
+
   const handleFormSubmit = async (data: IncomeFormData) => {
     const cleanedData: ProcessedIncomeData = {
       description: data.description,
@@ -95,7 +113,23 @@ export function IncomeForm({
     await onSubmit(cleanedData);
   };
 
-  return (
+  const noAccountsView = (
+    <div className="flex flex-col items-center justify-center gap-3 py-8 text-center">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+        <IconCreditCard className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <div className="space-y-1">
+        <p className="text-base font-medium">No accounts yet</p>
+        <p className="text-sm text-muted-foreground">Create your first account to record incomes.</p>
+      </div>
+      <div className="flex gap-2">
+        <Button onClick={() => setIsAccountDrawerOpen(true)}>Create account</Button>
+        <Button variant="outline" onClick={onCancel}>Cancel</Button>
+      </div>
+    </div>
+  );
+
+  const content = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
@@ -174,7 +208,19 @@ export function IncomeForm({
           name="accountId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Account *</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Account *</FormLabel>
+                {accounts.length === 0 && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="px-0"
+                    onClick={() => setIsAccountDrawerOpen(true)}
+                  >
+                    Create account
+                  </Button>
+                )}
+              </div>
               <Select
                 value={field.value}
                 onValueChange={field.onChange}
@@ -240,5 +286,74 @@ export function IncomeForm({
         </div>
       </form>
     </Form>
+  );
+
+  if (typeof open !== 'undefined' && onOpenChange) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange} direction={direction} dismissible={false}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{income ? 'Edit income' : 'Create new income'}</DrawerTitle>
+            <DrawerDescription>
+              {income
+                ? 'Update the information for the selected income.'
+                : 'Fill in the information to create a new income.'}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 space-y-4">
+            {accounts.length === 0 ? noAccountsView : content}
+            {accounts.length > 0 && (
+              <DrawerFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isLoading}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!form.formState.isValid || isLoading}
+                  className="flex-1"
+                  isLoading={isLoading}
+                >
+                  {income ? 'Update' : 'Create'}
+                </Button>
+              </DrawerFooter>
+            )}
+          </div>
+          <AccountForm
+            open={isAccountDrawerOpen}
+            onOpenChange={(o) => setIsAccountDrawerOpen(o)}
+            direction={direction}
+            onSuccess={(newAccountId) => {
+              if (newAccountId) {
+                form.setValue('accountId', newAccountId, { shouldValidate: true });
+              }
+              setIsAccountDrawerOpen(false);
+            }}
+          />
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return (
+    <>
+      {accounts.length === 0 ? noAccountsView : content}
+      <AccountForm
+        open={isAccountDrawerOpen}
+        onOpenChange={(o) => setIsAccountDrawerOpen(o)}
+        direction={direction}
+        onSuccess={(newAccountId) => {
+          if (newAccountId) {
+            form.setValue('accountId', newAccountId, { shouldValidate: true });
+          }
+          setIsAccountDrawerOpen(false);
+        }}
+      />
+    </>
   );
 }

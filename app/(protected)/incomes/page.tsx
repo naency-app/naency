@@ -20,14 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
 import { useSidebar } from '@/components/ui/sidebar';
+// Drawer is now handled within IncomeForm itself
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
 import type { IncomeFromTRPC } from '@/types/trpc';
@@ -254,34 +248,18 @@ export default function IncomesPage() {
         </div>
       </div>
 
-      <Drawer
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        direction={isMobile ? 'bottom' : 'right'}
-        dismissible={false}
-      >
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{editingIncome ? 'Edit income' : 'Create new income'}</DrawerTitle>
-            <DrawerDescription>
-              {editingIncome
-                ? 'Update the information for the selected income.'
-                : 'Fill in the information to create a new income.'}
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="p-4">
-            {categoriesData && accountsData && (
-              <IncomeForm
-                income={editingIncome || undefined}
-                accounts={accountsData}
-                onSubmit={handleFormSubmit}
-                onCancel={handleDrawerClose}
-                isLoading={createIncome.isPending || updateIncome.isPending}
-              />
-            )}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      {categoriesData && accountsData && (
+        <IncomeForm
+          income={editingIncome || undefined}
+          accounts={accountsData}
+          onSubmit={handleFormSubmit}
+          onCancel={handleDrawerClose}
+          isLoading={createIncome.isPending || updateIncome.isPending}
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+          direction={isMobile ? 'bottom' : 'right'}
+        />
+      )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
