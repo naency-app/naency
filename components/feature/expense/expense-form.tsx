@@ -86,6 +86,7 @@ export function ExpenseForm({
   const [date, setDate] = useState<Date | undefined>(
     expense?.paidAt ? new Date(expense.paidAt) : new Date()
   );
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
@@ -131,8 +132,8 @@ export function ExpenseForm({
             <FormItem>
               <FormLabel>Payment date</FormLabel>
               <FormControl>
-                <Popover>
-                  <PopoverTrigger asChild>
+                <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
+                  <PopoverTrigger asChild >
                     <Button
                       variant="outline"
                       className={cn(
@@ -150,7 +151,12 @@ export function ExpenseForm({
                     <Calendar
                       mode="single"
                       selected={date}
-                      onSelect={setDate}
+                      onSelect={(selectedDate) => {
+                        if (selectedDate) {
+                          setDate(selectedDate);
+                          setIsDatePopoverOpen(false);
+                        }
+                      }}
                       initialFocus
                       locale={ptBR}
                     />

@@ -48,18 +48,15 @@ export const Highlight = ({
 export function BankAccountCard() {
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
-  // QUERY: contas com saldo
   const { data: accounts, } = trpc.accounts.getAllWithBalance.useQuery({
     includeArchived: false,
   });
 
-  // STATE: dialog de criação
   const [openCreate, setOpenCreate] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState<'bank' | 'cash' | 'credit_card' | 'ewallet' | 'other'>('bank');
   const [currency, setCurrency] = useState('BRL');
 
-  // MUTATION: criar conta
   const createAccount = trpc.accounts.create.useMutation({
     onSuccess: () => {
       toast.success('Account created!');
@@ -133,70 +130,7 @@ export function BankAccountCard() {
             </div>
           </div>
 
-          {/* <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground">Your accounts</h3>
 
-            {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardContent className="p-3">
-                      <div className="mb-2 h-4 w-3/4 rounded bg-muted" />
-                      <div className="h-3 w-1/2 rounded bg-muted" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : accounts && accounts.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3">
-                {accounts.map((account) => (
-                  <Card
-                    key={account.id}
-                    className="cursor-pointer transition-colors hover:bg-accent/50"
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          <IconWallet className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span className="font-medium">{account.name}</span>
-                            <span className="text-xs capitalize text-muted-foreground">
-                              {account.type.replace('_', ' ')}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-mono text-sm">
-                            {formatCentsBRL(account.balance ?? 0)}
-                          </div>
-                          <Badge
-                            variant={account.isArchived ? 'outline' : 'secondary'}
-                            className="ml-auto mt-1 text-xs"
-                          >
-                            {account.isArchived ? 'Archived' : 'Active'}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground">
-                        Created {new Date(account.createdAt).toLocaleDateString()}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <IconWallet className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No accounts yet</p>
-                  <Button size="sm" className="mt-2" onClick={() => setOpenCreate(true)}>
-                    <IconPlus className="mr-1 h-4 w-4" />
-                    Add Account
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div> */}
         </CardContent>
       </Card>
 
