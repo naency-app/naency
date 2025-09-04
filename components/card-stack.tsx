@@ -3,19 +3,15 @@ import { IconPlus } from '@tabler/icons-react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { formatCentsBRL } from '@/helps/formatCurrency';
-import { trpc } from '@/lib/trpc';
+import type { AccountWithBalance } from '@/types/trpc';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 
 let interval: ReturnType<typeof setInterval> | undefined;
 
-export const CardStack = ({ offset, scaleFactor, setOpenCreate }: { offset?: number; scaleFactor?: number; setOpenCreate: (open: boolean) => void; }) => {
+export const CardStack = ({ offset, scaleFactor, setOpenCreate, accounts = [], isLoading = false, }: { offset?: number; scaleFactor?: number; setOpenCreate: (open: boolean) => void; accounts?: AccountWithBalance[]; isLoading?: boolean; }) => {
   const CARD_OFFSET = offset || 10;
   const SCALE_FACTOR = scaleFactor || 0.06;
-
-  const { data: accounts = [], isLoading } = trpc.accounts.getAllWithBalance.useQuery({
-    includeArchived: false,
-  });
 
   const [rotationIndex, setRotationIndex] = useState(0);
 
@@ -78,7 +74,7 @@ export const CardStack = ({ offset, scaleFactor, setOpenCreate }: { offset?: num
     );
   }
 
-  if (!accounts || accounts.length !== 0) {
+  if (!accounts || accounts.length === 0) {
     return (
       <div className="h-48 w-full flex items-center justify-center bg-muted/50 rounded-2xl">
         <div className="flex flex-col items-center justify-center gap-2">

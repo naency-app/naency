@@ -33,16 +33,13 @@ export const Highlight = ({
 export function BankAccountCard() {
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
-  const { data: accounts } = trpc.accounts.getAllWithBalance.useQuery({
+  const { data: accounts, isLoading } = trpc.accounts.getAllWithBalance.useQuery({
     includeArchived: false,
   });
 
   const [openCreate, setOpenCreate] = useState(false);
-  // Account creation is handled by AccountForm
 
   const activeCount = accounts?.filter((a) => !a.isArchived).length ?? 0;
-
-  // no-op; left for potential future quick actions
 
   return (
     <>
@@ -53,7 +50,7 @@ export function BankAccountCard() {
         </CardHeader>
 
         <CardContent className="h-full space-y-6">
-          <CardStack setOpenCreate={setOpenCreate} />
+          <CardStack setOpenCreate={setOpenCreate} accounts={accounts ?? []} isLoading={isLoading} />
 
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">Quick actions</h3>
