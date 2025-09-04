@@ -19,25 +19,11 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from '@/components/ui/drawer';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { CreateExpenseInput, ExpenseFromTRPC } from '@/types/trpc';
+import type { ExpenseFromTRPC } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -278,34 +264,18 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      <Drawer
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-        direction={isMobile ? 'bottom' : 'right'}
-        dismissible={false}
-      >
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>{editingExpense ? 'Edit expense' : 'Create new expense'}</DrawerTitle>
-            <DrawerDescription>
-              {editingExpense
-                ? 'Update the information for the selected expense.'
-                : 'Fill in the information to create a new expense.'}
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="p-4">
-            {categoriesData && accountsData && (
-              <ExpenseForm
-                expense={editingExpense as ExpenseFromTRPC | undefined}
-                accounts={accountsData}
-                onSubmit={handleFormSubmit}
-                onCancel={handleDrawerClose}
-                isLoading={createExpense.isPending || updateExpense.isPending}
-              />
-            )}
-          </div>
-        </DrawerContent>
-      </Drawer>
+      {categoriesData && accountsData && (
+        <ExpenseForm
+          expense={editingExpense as ExpenseFromTRPC | undefined}
+          accounts={accountsData}
+          onSubmit={handleFormSubmit}
+          onCancel={handleDrawerClose}
+          isLoading={createExpense.isPending || updateExpense.isPending}
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+          direction={isMobile ? 'bottom' : 'right'}
+        />
+      )}
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>

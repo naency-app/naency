@@ -10,8 +10,8 @@ export default function Page() {
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2 p-6">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 ">
-          <div className="xl:col-span-3 space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 ">
+          <div className="xl:col-span-3 space-y-4">
             <DashboardCards />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <IncomeExpensePieChart />

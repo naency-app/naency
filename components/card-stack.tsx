@@ -1,15 +1,17 @@
 'use client';
+import { IconPlus } from '@tabler/icons-react';
 import { motion } from 'motion/react';
 import { useCallback, useEffect, useState } from 'react';
 import { formatCentsBRL } from '@/helps/formatCurrency';
 import { trpc } from '@/lib/trpc';
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 
-let interval: any;
+let interval: ReturnType<typeof setInterval> | undefined;
 
-export const CardStack = ({ offset, scaleFactor }: { offset?: number; scaleFactor?: number }) => {
+export const CardStack = ({ offset, scaleFactor, setOpenCreate }: { offset?: number; scaleFactor?: number; setOpenCreate: (open: boolean) => void; }) => {
   const CARD_OFFSET = offset || 10;
   const SCALE_FACTOR = scaleFactor || 0.06;
-
 
   const { data: accounts = [], isLoading } = trpc.accounts.getAllWithBalance.useQuery({
     includeArchived: false,
@@ -28,59 +30,25 @@ export const CardStack = ({ offset, scaleFactor }: { offset?: number; scaleFacto
   useEffect(() => {
     startFlipping();
 
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [startFlipping]);
 
   // Create rotated accounts array
-  const rotatedAccounts = accounts.length > 0
-    ? [...accounts.slice(rotationIndex), ...accounts.slice(0, rotationIndex)]
-    : [];
+  const rotatedAccounts =
+    accounts.length > 0
+      ? [...accounts.slice(rotationIndex), ...accounts.slice(0, rotationIndex)]
+      : [];
 
   const getAccountTypeIcon = (accountType: string) => {
-    switch (accountType) {
-      case 'bank':
-        return (
-          <div className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-bold">BANK</div>
-        );
-      case 'cash':
-        return (
-          <div className="bg-green-600 text-white px-2 py-1 rounded text-xs font-bold">CASH</div>
-        );
-      case 'credit_card':
-        return (
-          <div className="bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">CREDIT</div>
-        );
-      case 'ewallet':
-        return (
-          <div className="bg-orange-600 text-white px-2 py-1 rounded text-xs font-bold">
-            E-WALLET
-          </div>
-        );
-      case 'other':
-        return (
-          <div className="bg-slate-600 text-white px-2 py-1 rounded text-xs font-bold">OTHER</div>
-        );
-      default:
-        return null;
-    }
+    const label = accountType.replace('_', ' ').toUpperCase();
+    return (
+      <div className="bg-white/10 text-white px-2 py-1 rounded text-xs font-bold">{label}</div>
+    );
   };
 
-  const getAccountGradient = (accountType: string) => {
-    switch (accountType) {
-      case 'bank':
-        return 'from-blue-600 to-blue-800';
-      case 'cash':
-        return 'from-green-600 to-green-800';
-      case 'credit_card':
-        return 'from-purple-600 to-purple-800';
-      case 'ewallet':
-        return 'from-orange-600 to-orange-800';
-      case 'other':
-        return 'from-slate-600 to-slate-800';
-      default:
-        return 'from-slate-600 to-slate-800';
-    }
-  };
+  // Colors are unified: front card uses black gradient, others use solid black
 
   const formatAccountNumber = (id: string) => {
     // Use the first 8 characters of the UUID as a mock account number
@@ -93,28 +61,32 @@ export const CardStack = ({ offset, scaleFactor }: { offset?: number; scaleFacto
 
   if (isLoading) {
     return (
-      <div className="relative h-64 w-full">
-        <div className="absolute h-64 w-full rounded-2xl p-6 bg-gradient-to-br from-slate-200 to-slate-300 animate-pulse">
-          <div className="h-4 bg-slate-400 rounded mb-8"></div>
-          <div className="w-12 h-9 bg-slate-400 rounded-md mb-6"></div>
-          <div className="h-6 bg-slate-400 rounded mb-6"></div>
-          <div className="flex justify-between">
-            <div className="h-4 bg-slate-400 rounded w-24"></div>
-            <div className="h-4 bg-slate-400 rounded w-20"></div>
+      <div className="h-48 w-full flex items-center justify-center">
+        <div className="h-44 w-full max-w-sm rounded-2xl p-6 bg-muted/50 flex flex-col gap-4 shadow animate-pulse">
+          <div className="flex items-center justify-between">
+            <Skeleton className="w-16 h-6 rounded" />
+            <Skeleton className="w-10 h-6 rounded" />
+          </div>
+          <Skeleton className="w-24 h-8 rounded mb-2" />
+          <Skeleton className="w-32 h-4 rounded mb-2" />
+          <div className="flex items-center justify-between mt-auto">
+            <Skeleton className="h-4 w-20 rounded" />
+            <Skeleton className="h-4 w-16 rounded" />
           </div>
         </div>
       </div>
     );
   }
 
-  if (!accounts || accounts.length === 0) {
+  if (!accounts || accounts.length !== 0) {
     return (
-      <div className="relative h-64 w-full">
-        <div className="absolute h-64 w-full rounded-2xl p-6 bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
-          <div className="text-center text-slate-500">
-            <div className="text-lg font-medium mb-2">No accounts found</div>
-            <div className="text-sm">Create your first account to get started</div>
-          </div>
+      <div className="h-48 w-full flex items-center justify-center bg-muted/50 rounded-2xl">
+        <div className="flex flex-col items-center justify-center gap-2">
+          <div className="text-md font-medium">No accounts found</div>
+          <div className="text-sm">Create your first account to get started</div>
+          <Button variant="outline" size="sm" onClick={() => setOpenCreate(true)}>
+            <IconPlus className="size-4" /> Create account
+          </Button>
         </div>
       </div>
     );
@@ -126,7 +98,7 @@ export const CardStack = ({ offset, scaleFactor }: { offset?: number; scaleFacto
         return (
           <motion.div
             key={account.id}
-            className={`absolute h-48 w-full rounded-2xl p-6 shadow-2xl border-0 overflow-hidden ${getAccountGradient(account.type)} bg-gradient-to-br`}
+            className={`absolute h-48 w-full rounded-2xl p-6 shadow-2xl border-0 overflow-hidden ${index === 0 ? 'bg-gradient-to-br from-black to-neutral-900' : 'bg-black'}`}
             style={{
               transformOrigin: 'top center',
             }}

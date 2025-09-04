@@ -14,6 +14,14 @@ import CategoryCombobox from '@/components/CategoryCombobox';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
+import {
   Form,
   FormControl,
   FormField,
@@ -32,7 +40,7 @@ import {
 } from '@/components/ui/select';
 import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
-import type { AccountFromTRPC, CategoryFromTRPC, ExpenseFromTRPC } from '@/types/trpc';
+import type { AccountFromTRPC, ExpenseFromTRPC } from '@/types/trpc';
 
 const expenseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -60,6 +68,9 @@ interface ExpenseFormProps {
   onSubmit: (data: ProcessedExpenseData) => Promise<void>;
   onCancel: () => void;
   isLoading?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  direction?: 'bottom' | 'right';
 }
 
 export function ExpenseForm({
@@ -68,6 +79,9 @@ export function ExpenseForm({
   onSubmit,
   onCancel,
   isLoading = false,
+  open = true,
+  onOpenChange,
+  direction = 'right',
 }: ExpenseFormProps) {
   const [date, setDate] = useState<Date | undefined>(
     expense?.paidAt ? new Date(expense.paidAt) : new Date()
@@ -107,13 +121,13 @@ export function ExpenseForm({
     }
   };
 
-  return (
+  const content = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="paidAt"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
               <FormLabel>Payment date</FormLabel>
               <FormControl>
@@ -227,27 +241,48 @@ export function ExpenseForm({
             />
           )}
         />
-
-        <div className="flex gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isLoading}
-            className="flex-1"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={!form.formState.isValid || isLoading}
-            className="flex-1"
-            isLoading={isLoading}
-          >
-            {expense ? 'Update' : 'Create'}
-          </Button>
-        </div>
       </form>
     </Form>
   );
+
+  // If open/onOpenChange are provided, render inside Drawer; else render inline
+  if (typeof open !== 'undefined' && onOpenChange) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange} direction={direction} dismissible={false}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{expense ? 'Edit expense' : 'Create new expense'}</DrawerTitle>
+            <DrawerDescription>
+              {expense
+                ? 'Update the information for the selected expense.'
+                : 'Fill in the information to create a new expense.'}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="p-4 space-y-4">{content}
+            <DrawerFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!form.formState.isValid || isLoading}
+                className="flex-1"
+                isLoading={isLoading}
+              >
+                {expense ? 'Update' : 'Create'}
+              </Button>
+            </DrawerFooter>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
+  return content;
 }

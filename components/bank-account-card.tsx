@@ -1,9 +1,8 @@
 'use client';
 
-import { IconBuildingBank, IconPlus, IconWallet } from '@tabler/icons-react';
+import { IconBuildingBank, IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { formatCentsBRL } from '@/helps/formatCurrency';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
@@ -51,7 +49,7 @@ export function BankAccountCard() {
   const utils = trpc.useUtils();
   const isMobile = useIsMobile();
   // QUERY: contas com saldo
-  const { data: accounts, isLoading } = trpc.accounts.getAllWithBalance.useQuery({
+  const { data: accounts, } = trpc.accounts.getAllWithBalance.useQuery({
     includeArchived: false,
   });
 
@@ -100,10 +98,10 @@ export function BankAccountCard() {
         </CardHeader>
 
         <CardContent className="h-full space-y-6">
-          <CardStack />
+          <CardStack setOpenCreate={setOpenCreate} />
 
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground">Quick Actions</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Quick actions</h3>
             <div className="space-y-2">
               <Button
                 variant="outline"
@@ -112,30 +110,30 @@ export function BankAccountCard() {
                 onClick={() => setOpenCreate(true)}
               >
                 <IconPlus className="mr-2 h-4 w-4" />
-                New Account
+                New account
               </Button>
               <Button variant="outline" size="sm" className="w-full justify-start">
                 <IconBuildingBank className="mr-2 h-4 w-4" />
-                Transfer Funds
+                Transfer funds
               </Button>
             </div>
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-muted-foreground">Account Stats</h3>
+            <h3 className="text-sm font-medium text-muted-foreground">Account stats</h3>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Active Accounts:</span>
+                <span>Active accounts</span>
                 <span className="font-medium">{activeCount}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Total Transactions:</span>
+                <span>Total transactions</span>
                 <span className="font-medium">—</span>
               </div>
             </div>
           </div>
 
-          <div className="space-y-3">
+          {/* <div className="space-y-3">
             <h3 className="text-sm font-medium text-muted-foreground">Your accounts</h3>
 
             {isLoading ? (
@@ -198,7 +196,7 @@ export function BankAccountCard() {
                 </CardContent>
               </Card>
             )}
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 
@@ -233,7 +231,7 @@ export function BankAccountCard() {
                 }
                 disabled={createAccount.isPending}
               >
-                <SelectTrigger>
+                <SelectTrigger className='w-full'>
                   <SelectValue placeholder="Select a type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -246,23 +244,13 @@ export function BankAccountCard() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm font-medium">Currency *</Label>
-              <Input
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
-                placeholder="BRL"
-                disabled={createAccount.isPending}
-              />
-            </div>
-
             <DrawerFooter className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpenCreate(false)}
                 disabled={createAccount.isPending}
-                className="flex-1"
+                className="flex-1 w-full"
               >
                 Cancel
               </Button>

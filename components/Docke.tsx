@@ -1,23 +1,16 @@
-"use client";
+'use client';
 
-import { CalendarIcon, HomeIcon, MailIcon, PencilIcon } from "lucide-react";
-import Link from "next/link";
-import React from "react";
-
-
-import { buttonVariants } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { Dock, DockIcon } from "@/components/float-dock";
-import { ModeToggle } from "./mode-toggle-theme";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { IconCash, IconCreditCardPay, IconListDetails, IconPlus } from "@tabler/icons-react";
+import { IconCash, IconCreditCardPay, IconListDetails, IconPlus } from '@tabler/icons-react';
+import { CalendarIcon, HomeIcon, MailIcon, PencilIcon } from 'lucide-react';
+import Link from 'next/link';
+import type React from 'react';
+import { Dock, DockIcon } from '@/components/float-dock';
+import { buttonVariants } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
+import { ModeToggle } from './mode-toggle-theme';
 
 export type IconProps = React.HTMLAttributes<SVGElement>;
 
@@ -67,32 +60,32 @@ const Icons = {
 
 const DATA = {
   navbar: [
-    { href: "/dashboard", icon: HomeIcon, label: "Home" },
-    { href: "/expenses", icon: IconCreditCardPay, label: "Expenses" },
-    { href: "#", icon: IconPlus, label: "Add Transaction" },
-    { href: "/incomes", icon: IconCash, label: "Incomes" },
-    { href: "/categories", icon: IconListDetails, label: "Categories" },
+    { href: '/dashboard', icon: HomeIcon, label: 'Home' },
+    { href: '/expenses', icon: IconCreditCardPay, label: 'Expenses' },
+    { href: '#', icon: IconPlus, label: 'Add Transaction' },
+    { href: '/incomes', icon: IconCash, label: 'Incomes' },
+    { href: '/categories', icon: IconListDetails, label: 'Categories' },
   ],
   contact: {
     social: {
       GitHub: {
-        name: "GitHub",
-        url: "#",
+        name: 'GitHub',
+        url: '#',
         icon: Icons.github,
       },
       LinkedIn: {
-        name: "LinkedIn",
-        url: "#",
+        name: 'LinkedIn',
+        url: '#',
         icon: Icons.linkedin,
       },
       X: {
-        name: "X",
-        url: "#",
+        name: 'X',
+        url: '#',
         icon: Icons.x,
       },
       email: {
-        name: "Send Email",
-        url: "#",
+        name: 'Send Email',
+        url: '#',
         icon: Icons.email,
       },
     },
@@ -119,8 +112,8 @@ export function DockApp() {
                     href={item.href}
                     aria-label={item.label}
                     className={cn(
-                      buttonVariants({ variant: "ghost", size: "icon" }),
-                      "size-12 rounded-full",
+                      buttonVariants({ variant: 'ghost', size: 'icon' }),
+                      'size-12 rounded-full'
                     )}
                   >
                     <item.icon className="size-4" />
@@ -132,7 +125,6 @@ export function DockApp() {
               </Tooltip>
             </DockIcon>
           ))}
-
 
           {/* <Separator orientation="vertical" className="h-full py-2" />
           <DockIcon>
