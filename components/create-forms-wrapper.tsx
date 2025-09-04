@@ -11,8 +11,7 @@ interface CreateFormsWrapperProps {
 export function CreateFormsWrapper({ onSuccess, context = 'expense' }: CreateFormsWrapperProps) {
   return (
     <div className="flex items-center gap-2">
-      <CreateCategoryForm onSuccess={onSuccess} defaultFlow={context} />
-
+      <CreateCategoryForm onSuccess={onSuccess} defaultFlow={context} showFlowSelector={false} />
     </div>
   );
 }

@@ -12,6 +12,8 @@ let interval: ReturnType<typeof setInterval> | undefined;
 export const CardStack = ({ offset, scaleFactor, setOpenCreate, accounts = [], isLoading = false, }: { offset?: number; scaleFactor?: number; setOpenCreate: (open: boolean) => void; accounts?: AccountWithBalance[]; isLoading?: boolean; }) => {
   const CARD_OFFSET = offset || 10;
   const SCALE_FACTOR = scaleFactor || 0.06;
+  const VISIBLE_BACK_CARDS = 2;
+  const BASE_OFFSET = VISIBLE_BACK_CARDS * CARD_OFFSET;
 
   const [rotationIndex, setRotationIndex] = useState(0);
 
@@ -89,17 +91,19 @@ export const CardStack = ({ offset, scaleFactor, setOpenCreate, accounts = [], i
   }
 
   return (
-    <div className="relative h-48 w-full">
+    <div className="relative h-64 w-full max-w-sm mx-auto overflow-hidden">
       {rotatedAccounts.map((account, index) => {
         return (
           <motion.div
             key={account.id}
-            className={`absolute h-48 w-full rounded-2xl p-6 shadow-2xl border-0 overflow-hidden ${index === 0 ? 'bg-gradient-to-br from-black to-neutral-900' : 'bg-black'}`}
+            className={`absolute h-48 w-full rounded-2xl p-6 shadow-md border-0 overflow-hidden ${index === 0 ? 'bg-gradient-to-br from-black to-neutral-900' : 'bg-black'}`}
             style={{
               transformOrigin: 'top center',
+              left: '50%',
             }}
             animate={{
-              top: index * -CARD_OFFSET,
+              x: '-50%',
+              top: BASE_OFFSET + index * -CARD_OFFSET,
               scale: 1 - index * SCALE_FACTOR,
               zIndex: rotatedAccounts.length - index,
             }}

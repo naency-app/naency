@@ -27,6 +27,7 @@ import { Tabs, TabsList, TabsTrigger } from './ui/tabs';
 interface CreateCategoryFormProps {
   onSuccess?: () => void;
   defaultFlow?: 'expense' | 'income';
+  showFlowSelector?: boolean;
 }
 
 type Level = 'group' | 'subcategory';
@@ -34,6 +35,7 @@ type Level = 'group' | 'subcategory';
 export function CreateCategoryForm({
   onSuccess,
   defaultFlow = 'expense',
+  showFlowSelector = false,
 }: CreateCategoryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [flow, setFlow] = useState<'expense' | 'income'>(defaultFlow);
@@ -53,17 +55,19 @@ export function CreateCategoryForm({
   const { data: allParents = [], isLoading: loadingParents } =
     trpc.categories.getParentCategories.useQuery();
 
-  const parentOptions = useMemo(
-    () => allParents.filter((c: any) => c.flow === flow),
-    [allParents, flow]
-  );
+  const parentOptions = useMemo(() => {
+    return allParents.filter((c: { flow: 'expense' | 'income' }) => c.flow === flow);
+  }, [allParents, flow]);
 
   // reset parent quando trocar para "group" ou mudar o flow
   useEffect(() => {
     if (level === 'group') setParentId('');
   }, [level]);
   useEffect(() => {
-    setParentId(''); // trocou fluxo, limpa seleção do pai
+    // Clear parent selection whenever flow changes
+    if (flow === 'expense' || flow === 'income') {
+      setParentId('');
+    }
   }, [flow]);
 
   const createCategory = trpc.categories.create.useMutation({
@@ -136,26 +140,28 @@ export function CreateCategoryForm({
 
           <div className="p-4">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Flow: Expense vs Income */}
-              <div className="space-y-2">
-                <Label>For</Label>
-                <Select
-                  value={flow}
-                  onValueChange={(v: 'expense' | 'income') => setFlow(v)}
-                  disabled={createCategory.isPending}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="expense">Expense</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Choose whether this category is for expenses or incomes.
-                </p>
-              </div>
+              {/* Flow: Expense vs Income (only on categories page) */}
+              {showFlowSelector && (
+                <div className="space-y-2">
+                  <Label>For</Label>
+                  <Select
+                    value={flow}
+                    onValueChange={(v: 'expense' | 'income') => setFlow(v)}
+                    disabled={createCategory.isPending}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="income">Income</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Choose whether this category is for expenses or incomes.
+                  </p>
+                </div>
+              )}
 
               {/* Level: Group vs Subcategory */}
               <div className="space-y-2">
@@ -189,7 +195,7 @@ export function CreateCategoryForm({
                           No groups found for this type.
                         </div>
                       ) : (
-                        parentOptions.map((category: any) => (
+                        parentOptions.map((category: { id: string; name: string }) => (
                           <SelectItem key={category.id} value={category.id}>
                             {category.name}
                           </SelectItem>

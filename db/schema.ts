@@ -286,5 +286,3 @@ export const incomes = pgTable(
     nonNegativeAmount: check('incomes_amount_non_negative', sql`${t.amount} >= 0`),
   })
 );
-
-// Observação: a view account_balances é criada via migração SQL (abaixo).

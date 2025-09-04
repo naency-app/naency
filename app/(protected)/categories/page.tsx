@@ -1,9 +1,7 @@
 'use client';
 
 import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
-import type { TRPCClientErrorLike } from '@trpc/client';
 import { useState } from 'react';
-import { toast } from 'sonner';
 import { CreateCategoryForm } from '@/components/create-category-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -60,7 +58,7 @@ export default function CategoriesPage() {
               <CardTitle>Criar Nova Categoria</CardTitle>
             </CardHeader>
             <CardContent>
-              <CreateCategoryForm onSuccess={handleCategoryCreated} />
+              <CreateCategoryForm onSuccess={handleCategoryCreated} showFlowSelector />
             </CardContent>
           </Card>
 
