@@ -9,6 +9,7 @@ import {
   index,
   pgEnum,
   pgTable,
+  pgView,
   text,
   timestamp,
   uniqueIndex,
@@ -28,10 +29,14 @@ export const accountTypeEnum = pgEnum('account_type', [
   'ewallet',
   'other',
 ]);
+
+// ✅ adicionamos duas novas fontes
 export const movementSourceTypeEnum = pgEnum('movement_source_type', [
   'expense',
   'income',
   'transfer',
+  'opening_balance', // novo
+  'adjustment', // opcional, p/ acertos de conciliação
 ]);
 
 export const user = pgTable('user', {
@@ -113,7 +118,7 @@ export const jwks = pgTable('jwks', {
 });
 
 /* ========================
-   Categorias (com arquivamento lógico)
+   Categorias
    ======================== */
 
 export const categories = pgTable(
@@ -134,16 +139,12 @@ export const categories = pgTable(
   (t) => ({
     userFlowIdx: index('categories_user_flow_idx').on(t.userId, t.flow),
     parentIdIdx: index('categories_parent_id_idx').on(t.parentId),
-
-    // Uniques apenas para categorias ativas
     siblingsUniqActive: uniqueIndex('categories_user_flow_parent_name_active_uidx')
       .on(t.userId, t.flow, t.parentId, t.name)
       .where(sql`${t.parentId} IS NOT NULL AND ${t.isArchived} = false`),
-
     rootUniqActive: uniqueIndex('categories_user_flow_root_name_active_uidx')
       .on(t.userId, t.flow, t.name)
       .where(sql`${t.parentId} IS NULL AND ${t.isArchived} = false`),
-
     parentFk: foreignKey({
       name: 'categories_parent_id_fkey',
       columns: [t.parentId],
@@ -153,7 +154,7 @@ export const categories = pgTable(
 );
 
 /* ========================
-   Contas unificadas + movimentos + transferências
+   Contas + Movimentos + Transferências
    ======================== */
 
 export const accounts = pgTable(
@@ -190,11 +191,12 @@ export const accountMovements = pgTable(
     accountId: uuid('account_id')
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
-    // Convenção: crédito > 0; débito < 0 (em centavos)
+    // convenção: crédito > 0; débito < 0 (centavos)
     amount: bigint('amount', { mode: 'number' }).notNull(),
     occurredAt: timestamp('occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
     sourceType: movementSourceTypeEnum('source_type').notNull(),
     sourceId: uuid('source_id').notNull(),
+    note: varchar('note', { length: 255 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
@@ -236,7 +238,7 @@ export const transfers = pgTable(
 );
 
 /* ========================
-   Despesas e Receitas (com accountId unificado)
+   Despesas / Receitas
    ======================== */
 
 export const expenses = pgTable(
@@ -285,4 +287,45 @@ export const incomes = pgTable(
     categoryIdx: index('incomes_category_id_idx').on(t.categoryId),
     nonNegativeAmount: check('incomes_amount_non_negative', sql`${t.amount} >= 0`),
   })
+);
+
+/* ========================
+   Abertura de conta (1x por conta)
+   ======================== */
+
+export const accountOpenings = pgTable(
+  'account_openings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    accountId: uuid('account_id')
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    amount: bigint('amount', { mode: 'number' }).notNull(), // saldo inicial (pode ser negativo, ex.: conta no cheque especial)
+    occurredAt: timestamp('occurred_at', { withTimezone: true, mode: 'date' }).notNull(),
+    note: varchar('note', { length: 255 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    oneOpeningPerAccount: uniqueIndex('account_openings_account_uidx').on(t.accountId),
+    userIdx: index('account_openings_user_idx').on(t.userId),
+    accountIdx: index('account_openings_account_idx').on(t.accountId),
+  })
+);
+
+/* ========================
+   View de saldos (opcional, facilita consultas)
+   ======================== */
+
+export const accountBalances = pgView('account_balances').as((qb) =>
+  qb
+    .select({
+      accountId: accounts.id,
+      balance: sql<number>`coalesce(sum(${accountMovements.amount}), 0)`.as('balance'), // ⬅️ alias!
+    })
+    .from(accounts)
+    .leftJoin(accountMovements, sql`${accountMovements.accountId} = ${accounts.id}`)
+    .groupBy(accounts.id)
 );

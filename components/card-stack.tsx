@@ -82,7 +82,7 @@ export const CardStack = ({ offset, scaleFactor, setOpenCreate, accounts = [], i
         <div className="flex flex-col items-center justify-center gap-2">
           <div className="text-md font-medium">No accounts found</div>
           <div className="text-sm">Create your first account to get started</div>
-          <Button variant="outline" size="sm" onClick={() => setOpenCreate(true)}>
+          <Button size="sm" onClick={() => setOpenCreate(true)}>
             <IconPlus className="size-4" /> Create account
           </Button>
         </div>
