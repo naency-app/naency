@@ -4,6 +4,7 @@ import { IconCornerDownRight, IconPlus } from '@tabler/icons-react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Drawer,
   DrawerContent,
@@ -39,19 +40,20 @@ export function CreateCategoryForm({
 }: CreateCategoryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [flow, setFlow] = useState<'expense' | 'income'>(defaultFlow);
-  const [level, setLevel] = useState<Level>('subcategory'); // <-- novo: define se cria Grupo ou Subcategoria
+  const [level, setLevel] = useState<Level>('group');
   const [name, setName] = useState('');
   const [color, setColor] = useState('#3b82f6');
-  const [parentId, setParentId] = useState<string>(''); // só usado quando level='subcategory'
+  const [parentId, setParentId] = useState<string>('');
+  const [createAnother, setCreateAnother] = useState(false);
   const { isMobile } = useSidebar();
 
   const categoryNameId = useId();
   const categoryColorId = useId();
   const categoryParentId = useId();
+  const createAnotherId = useId();
 
   const utils = trpc.useUtils();
 
-  // Se seu endpoint aceitar filtro por flow, prefira usar: useQuery({ flow })
   const { data: allParents = [], isLoading: loadingParents } =
     trpc.categories.getParentCategories.useQuery();
 
@@ -76,7 +78,16 @@ export function CreateCategoryForm({
       utils.categories.getAll.invalidate();
       utils.categories.getParentCategories.invalidate();
       utils.categories.getHierarchical.invalidate();
-      handleClose();
+      if (createAnother) {
+        // Keep drawer open and reset fields for next creation
+        setName('');
+        setColor('#3b82f6');
+        if (level === 'group') {
+          setParentId('');
+        }
+      } else {
+        handleClose();
+      }
       onSuccess?.();
     },
     onError: (error) => {
@@ -166,10 +177,19 @@ export function CreateCategoryForm({
               {/* Level: Group vs Subcategory */}
               <div className="space-y-2">
                 <Label>Category level</Label>
-                <Tabs defaultValue={level} value={level} onValueChange={(v) => setLevel((v as Level) || 'group')} className="items-center w-full">
-                  <TabsList className='w-full'>
-                    <TabsTrigger value="subcategory" className="flex-1">Subcategory</TabsTrigger>
-                    <TabsTrigger value="group" className="flex-1">Group</TabsTrigger>
+                <Tabs
+                  defaultValue={level}
+                  value={level}
+                  onValueChange={(v) => setLevel((v as Level) || 'group')}
+                  className="items-center w-full"
+                >
+                  <TabsList className="w-full">
+                    <TabsTrigger value="subcategory" className="flex-1">
+                      Subcategory
+                    </TabsTrigger>
+                    <TabsTrigger value="group" className="flex-1">
+                      Group
+                    </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
@@ -181,12 +201,10 @@ export function CreateCategoryForm({
                     value={parentId || undefined}
                     onValueChange={(v) => setParentId(v || '')}
                     disabled={createCategory.isPending || loadingParents}
-
                   >
-                    <SelectTrigger id={categoryParentId} className='w-full'>
+                    <SelectTrigger id={categoryParentId} className="w-full">
                       <SelectValue
                         placeholder={loadingParents ? 'Loading groups…' : 'Select group'}
-
                       />
                     </SelectTrigger>
                     <SelectContent>
@@ -209,8 +227,10 @@ export function CreateCategoryForm({
                 </div>
               )}
               {/* Name (dinâmico) */}
-              <div className='flex items-center gap-2'>
-                <IconCornerDownRight className={`size-6 text-primary ${level === 'group' ? 'hidden' : ''}`} />
+              <div className="flex items-center gap-2">
+                <IconCornerDownRight
+                  className={`size-6 text-primary ${level === 'group' ? 'hidden' : ''}`}
+                />
                 <div className="space-y-2 w-full">
                   <Label htmlFor={categoryNameId}>
                     {level === 'group' ? 'Category name *' : 'Subcategory name *'}
@@ -224,42 +244,49 @@ export function CreateCategoryForm({
                   />
                 </div>
               </div>
-              {
-                level === 'subcategory' && (
-                  <div className="space-y-2">
-                    <Label htmlFor={categoryColorId}>Color</Label>
-                    <div className="flex items-center gap-3">
-                      <label
-                        htmlFor={categoryColorId}
-                        className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center cursor-pointer transition-all"
-                        style={{ backgroundColor: color }}
-                      >
-                        <input
-                          id={categoryColorId}
-                          type="color"
-                          value={color}
-                          onChange={(e) => setColor(e.target.value)}
-                          disabled={createCategory.isPending}
-                          className="opacity-0 w-8 h-8 cursor-pointer shrink-0"
-                          tabIndex={-1}
-                          style={{ position: 'absolute', pointerEvents: 'none' }}
-                        />
-                      </label>
-                      <Input
+              {level === 'subcategory' && (
+                <div className="space-y-2">
+                  <Label htmlFor={categoryColorId}>Color</Label>
+                  <div className="flex items-center gap-3">
+                    <label
+                      htmlFor={categoryColorId}
+                      className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center cursor-pointer transition-all"
+                      style={{ backgroundColor: color }}
+                    >
+                      <input
+                        id={categoryColorId}
+                        type="color"
                         value={color}
                         onChange={(e) => setColor(e.target.value)}
-                        placeholder="#3b82f6"
                         disabled={createCategory.isPending}
-                        className="flex-1"
+                        className="opacity-0 w-8 h-8 cursor-pointer shrink-0"
+                        tabIndex={-1}
+                        style={{ position: 'absolute', pointerEvents: 'none' }}
                       />
-                    </div>
+                    </label>
+                    <Input
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      placeholder="#3b82f6"
+                      disabled={createCategory.isPending}
+                      className="flex-1"
+                    />
                   </div>
-                )
-              }
+                </div>
+              )}
 
 
-
-
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id={createAnotherId}
+                  checked={createAnother}
+                  onCheckedChange={(v) => setCreateAnother(!!v)}
+                  disabled={createCategory.isPending}
+                />
+                <Label htmlFor={createAnotherId} className="text-sm text-muted-foreground">
+                  Keep open
+                </Label>
+              </div>
 
               {/* Ações */}
               <div className="flex items-center gap-2 pt-2">

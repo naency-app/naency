@@ -4,13 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconCalendar, IconChevronDown, IconCreditCard } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
 import { AccountForm } from '@/components/feature/account/account-form';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Drawer,
   DrawerContent,
@@ -107,8 +108,8 @@ export function IncomeForm({
   );
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false);
-
-
+  const [createAnother, setCreateAnother] = useState(false);
+  const createAnotherId = useId();
 
   useEffect(() => {
     if (date)
@@ -148,8 +149,31 @@ export function IncomeForm({
         receivedAt: data.receivedAt ? new Date(data.receivedAt) : undefined,
       };
       await onSubmit(cleanedData);
+      if (income) {
+        // Editing: close drawer
+        onCancel();
+        return;
+      }
+      if (createAnother) {
+        const currentAccount = form.getValues('accountId');
+        const currentCategory = form.getValues('categoryId');
+        form.reset(
+          {
+            description: '',
+            amount: 0,
+            categoryId: currentCategory ?? null,
+            accountId: currentAccount,
+            receivedAt: new Date().toISOString(),
+          },
+          { keepDefaultValues: true }
+        );
+        setDate(new Date());
+        setIsDatePopoverOpen(false);
+      } else {
+        onCancel();
+      }
     },
-    [onSubmit]
+    [onSubmit, income, onCancel, createAnother, form]
   );
 
   // --- Memo: options de contas ---
@@ -258,7 +282,6 @@ export function IncomeForm({
           )}
         />
 
-
         {/* Description */}
         <FormField
           control={form.control}
@@ -318,6 +341,18 @@ export function IncomeForm({
             </FormItem>
           )}
         />
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={createAnotherId}
+            checked={createAnother}
+            onCheckedChange={(v) => setCreateAnother(!!v)}
+            disabled={isLoading}
+          />
+          <FormLabel htmlFor={createAnotherId} className="text-sm text-muted-foreground">
+            Keep open
+          </FormLabel>
+        </div>
 
         <DrawerFooter>
           <Button

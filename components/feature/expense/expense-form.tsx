@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconCalendar, IconChevronDown, IconCreditCard } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
@@ -14,6 +14,7 @@ import { AccountForm } from '@/components/feature/account/account-form';
 // import { FieldTransactionAccount } from '@/components/field-transaction-account';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Drawer,
   DrawerContent,
@@ -89,6 +90,8 @@ export function ExpenseForm({
   );
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false);
+  const [createAnother, setCreateAnother] = useState(false);
+  const createAnotherId = useId();
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
@@ -164,6 +167,28 @@ export function ExpenseForm({
 
     try {
       await onSubmit(cleanedData);
+      // After successful submit, decide whether to keep open
+      if (expense) {
+        // Editing: close drawer
+        onCancel();
+        return;
+      }
+      if (createAnother) {
+        // Reset fields for a new entry but keep account/category for convenience
+        const currentAccount = form.getValues('accountId');
+        const currentCategory = form.getValues('categoryId');
+        form.reset({
+          name: '',
+          amount: 0,
+          categoryId: currentCategory ?? null,
+          accountId: currentAccount,
+          paidAt: new Date().toISOString(),
+        });
+        setDate(new Date());
+        setIsDatePopoverOpen(false);
+      } else {
+        onCancel();
+      }
     } catch (error) {
       console.error('Error in form submission:', error);
     }
@@ -176,11 +201,17 @@ export function ExpenseForm({
       </div>
       <div className="space-y-1">
         <p className="text-base font-medium">No accounts yet</p>
-        <p className="text-sm text-muted-foreground">Create your first account to record expenses.</p>
+        <p className="text-sm text-muted-foreground">
+          Create your first account to record expenses.
+        </p>
       </div>
       <div className="flex gap-2 w-full">
-        <Button className="flex-1" variant="outline" onClick={handleCancel}>Cancel</Button>
-        <Button className="flex-1" onClick={() => setIsAccountDrawerOpen(true)}>Create account</Button>
+        <Button className="flex-1" variant="outline" onClick={handleCancel}>
+          Cancel
+        </Button>
+        <Button className="flex-1" onClick={() => setIsAccountDrawerOpen(true)}>
+          Create account
+        </Button>
       </div>
     </div>
   );
@@ -293,7 +324,9 @@ export function ExpenseForm({
                   <FormControl>
                     <SelectTrigger className="w-full">
                       <SelectValue
-                        placeholder={accounts.length ? 'Select an account' : 'No accounts available'}
+                        placeholder={
+                          accounts.length ? 'Select an account' : 'No accounts available'
+                        }
                       />
                     </SelectTrigger>
                   </FormControl>
@@ -323,6 +356,17 @@ export function ExpenseForm({
               />
             )}
           />
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={createAnotherId}
+              checked={createAnother}
+              onCheckedChange={(v) => setCreateAnother(!!v)}
+              disabled={isLoading}
+            />
+            <FormLabel htmlFor={createAnotherId} className="text-sm text-muted-foreground">
+              Keep open
+            </FormLabel>
+          </div>
           <DrawerFooter>
             <Button
               type="button"

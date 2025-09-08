@@ -51,12 +51,12 @@ export const incomeColumns = ({
       header: 'Description',
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate capitalize" title={row.getValue('description')}>
-          {row.getValue('description')}
+          {String(row.getValue('description')).toUpperCase()}
         </div>
       ),
     },
     {
-      accessorKey: 'accountId', // <-- unificado
+      accessorKey: 'accountId',
       header: 'Account',
       cell: ({ row }) => {
         const accountId = row.getValue('accountId') as string | null | undefined;
