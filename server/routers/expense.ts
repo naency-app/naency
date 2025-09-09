@@ -2,7 +2,13 @@ import { TRPCError } from '@trpc/server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
-import { accountMovements, accounts, categories, expenses } from '@/db/schema';
+import {
+  accountMovements,
+  accounts,
+  categories,
+  expenses,
+  type paymentMethodEnum,
+} from '@/db/schema';
 import { protectedProcedure, router } from '../trpc';
 
 const baseExpense = z.object({
@@ -11,6 +17,23 @@ const baseExpense = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   paidAt: z.coerce.date().optional().nullable(),
   accountId: z.string().uuid(), // conta unificada
+  paymentMethod: z
+    .enum([
+      'unspecified',
+      'cash',
+      'pix',
+      'boleto',
+      'debit_card',
+      'credit_card',
+      'bank_transfer',
+      'ted',
+      'doc',
+      'ewallet',
+      'paypal',
+      'other',
+    ])
+    .default('unspecified'),
+  paymentRef: z.string().max(120).optional(),
 });
 
 const dateRangeFilter = z.object({
@@ -48,7 +71,7 @@ export const expensesRouter = router({
   getAll: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-    const conds: any[] = [eq(expenses.userId, ctx.userId)];
+    const conds = [eq(expenses.userId, ctx.userId)];
     if (input?.from) conds.push(sql`${paidOrCreated()} >= ${input.from}`);
     if (input?.to) {
       const endDate = new Date(input.to);
@@ -66,7 +89,7 @@ export const expensesRouter = router({
   getTotal: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-    const conds: any[] = [eq(expenses.userId, ctx.userId)];
+    const conds = [eq(expenses.userId, ctx.userId)];
     if (input?.from) conds.push(sql`${paidOrCreated()} >= ${input.from}`);
     if (input?.to) {
       const endDate = new Date(input.to);
@@ -86,7 +109,7 @@ export const expensesRouter = router({
     .query(async ({ ctx, input }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      const conds: any[] = [eq(expenses.userId, ctx.userId)];
+      const conds = [eq(expenses.userId, ctx.userId)];
       if (input?.from) conds.push(sql`${paidOrCreated()} >= ${input.from}`);
       if (input?.to) {
         const endDate = new Date(input.to);
@@ -144,6 +167,9 @@ export const expensesRouter = router({
         categoryId: input.categoryId ?? null,
         paidAt: input.paidAt ?? null,
         accountId: input.accountId,
+        paymentMethod: (input.paymentMethod ??
+          'unspecified') as (typeof paymentMethodEnum.enumValues)[number],
+        paymentRef: input.paymentRef ?? null,
       })
       .returning();
 
@@ -200,6 +226,9 @@ export const expensesRouter = router({
           categoryId: input.categoryId ?? null,
           paidAt: input.paidAt ?? null,
           accountId: input.accountId,
+          paymentMethod: (input.paymentMethod ??
+            'unspecified') as (typeof paymentMethodEnum.enumValues)[number],
+          paymentRef: input.paymentRef ?? null,
         })
         .where(and(eq(expenses.id, input.id), eq(expenses.userId, ctx.userId)))
         .returning();

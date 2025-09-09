@@ -4,6 +4,7 @@ import { balancesRouter } from './balances';
 import { categoriesRouter } from './categories';
 import { expensesRouter } from './expense';
 import { incomesRouter } from './incomes';
+import { openingsRouter } from './opening';
 
 import { transactionAccountRouter } from './transaction_account';
 import { transfersRouter } from './transfers';
@@ -18,6 +19,7 @@ export const appRouter = router({
   accounts: accountsRouter,
   transfers: transfersRouter,
   balances: balancesRouter,
+  openings: openingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

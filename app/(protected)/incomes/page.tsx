@@ -24,7 +24,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 // Drawer is now handled within IncomeForm itself
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { IncomeFromTRPC } from '@/types/trpc';
+import type { CreateIncomeInput, IncomeFromTRPC } from '@/types/trpc';
 
 export default function IncomesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -154,6 +154,7 @@ export default function IncomesPage() {
     categoryId?: string | null;
     accountId: string; // <-- obrigatório
     receivedAt?: Date;
+    paymentMethod: CreateIncomeInput['paymentMethod'];
   }) => {
     if (editingIncome) {
       await updateIncome.mutateAsync({
@@ -163,6 +164,7 @@ export default function IncomesPage() {
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         receivedAt: data.receivedAt ? data.receivedAt.toISOString() : undefined,
+        paymentMethod: data.paymentMethod,
       });
     } else {
       await createIncome.mutateAsync({
@@ -171,6 +173,7 @@ export default function IncomesPage() {
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         receivedAt: data.receivedAt ? data.receivedAt.toISOString() : undefined,
+        paymentMethod: data.paymentMethod,
       });
     }
   };
@@ -217,8 +220,9 @@ export default function IncomesPage() {
                       handleEditIncome,
                       handleDeleteIncome,
                       getCategoryName,
-                      getAccountName, // <-- unificado
+                      getAccountName,
                     })}
+                    storageKey="naency:incomes-table"
                     enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search"

@@ -4,13 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { IconCalendar, IconChevronDown, IconCreditCard } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import CategoryCombobox from '@/components/CategoryCombobox';
 import { AccountForm } from '@/components/feature/account/account-form';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Drawer,
   DrawerContent,
@@ -40,6 +41,22 @@ import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
 import type { AccountFromTRPC, IncomeFromTRPC } from '@/types/trpc';
 
+const paymentMethodValues = [
+  'unspecified',
+  'cash',
+  'pix',
+  'boleto',
+  'debit_card',
+  'credit_card',
+  'bank_transfer',
+  'ted',
+  'doc',
+  'ewallet',
+  'paypal',
+  'other',
+] as const;
+type PaymentMethod = (typeof paymentMethodValues)[number];
+
 // --- Schema fora do componente (já estava) ---
 const incomeSchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -47,9 +64,10 @@ const incomeSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   accountId: z.string().uuid({ message: 'Select an account' }),
   receivedAt: z.string().optional(),
+  paymentMethod: z.enum(paymentMethodValues).default('unspecified'),
 });
 
-type IncomeFormData = z.infer<typeof incomeSchema>;
+type IncomeFormData = z.input<typeof incomeSchema>;
 
 type ProcessedIncomeData = {
   description: string;
@@ -57,6 +75,7 @@ type ProcessedIncomeData = {
   categoryId?: string | null;
   accountId: string;
   receivedAt?: Date;
+  paymentMethod: PaymentMethod;
 };
 
 interface IncomeFormProps {
@@ -88,6 +107,7 @@ export function IncomeForm({
       categoryId: income?.categoryId ?? null,
       accountId: income?.accountId ?? '',
       receivedAt: income?.receivedAt ? new Date(income.receivedAt).toISOString() : undefined,
+      paymentMethod: (income?.paymentMethod as PaymentMethod) ?? 'unspecified',
     }),
     [income]
   );
@@ -107,8 +127,8 @@ export function IncomeForm({
   );
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
   const [isAccountDrawerOpen, setIsAccountDrawerOpen] = useState(false);
-
-
+  const [createAnother, setCreateAnother] = useState(false);
+  const createAnotherId = useId();
 
   useEffect(() => {
     if (date)
@@ -146,10 +166,34 @@ export function IncomeForm({
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         receivedAt: data.receivedAt ? new Date(data.receivedAt) : undefined,
+        paymentMethod: (data.paymentMethod ?? 'unspecified') as PaymentMethod,
       };
       await onSubmit(cleanedData);
+      if (income) {
+        // Editing: close drawer
+        onCancel();
+        return;
+      }
+      if (createAnother) {
+        const currentAccount = form.getValues('accountId');
+        const currentCategory = form.getValues('categoryId');
+        form.reset(
+          {
+            description: '',
+            amount: 0,
+            categoryId: currentCategory ?? null,
+            accountId: currentAccount,
+            receivedAt: new Date().toISOString(),
+          },
+          { keepDefaultValues: true }
+        );
+        setDate(new Date());
+        setIsDatePopoverOpen(false);
+      } else {
+        onCancel();
+      }
     },
-    [onSubmit]
+    [onSubmit, income, onCancel, createAnother, form]
   );
 
   // --- Memo: options de contas ---
@@ -258,7 +302,6 @@ export function IncomeForm({
           )}
         />
 
-
         {/* Description */}
         <FormField
           control={form.control}
@@ -300,6 +343,34 @@ export function IncomeForm({
           )}
         />
 
+        {/* Payment method */}
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment method</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a method" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {paymentMethodValues.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m.replaceAll('_', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+
+
         {/* Category */}
         <FormField
           control={form.control}
@@ -318,6 +389,18 @@ export function IncomeForm({
             </FormItem>
           )}
         />
+
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={createAnotherId}
+            checked={createAnother}
+            onCheckedChange={(v) => setCreateAnother(!!v)}
+            disabled={isLoading}
+          />
+          <FormLabel htmlFor={createAnotherId} className="text-sm text-muted-foreground">
+            Keep open
+          </FormLabel>
+        </div>
 
         <DrawerFooter>
           <Button

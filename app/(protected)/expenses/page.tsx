@@ -23,7 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useSidebar } from '@/components/ui/sidebar';
 import { useDateFilter } from '@/hooks/use-date-filter';
 import { trpc } from '@/lib/trpc';
-import type { ExpenseFromTRPC } from '@/types/trpc';
+import type { CreateExpenseInput, ExpenseFromTRPC } from '@/types/trpc';
 
 export default function ExpensesPage() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -170,6 +170,7 @@ export default function ExpensesPage() {
     categoryId?: string | null;
     accountId: string; // <-- obrigatório
     paidAt?: Date;
+    paymentMethod: CreateExpenseInput['paymentMethod'];
   }) => {
     if (editingExpense) {
       await updateExpense.mutateAsync({
@@ -179,6 +180,7 @@ export default function ExpensesPage() {
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
+        paymentMethod: data.paymentMethod,
       });
     } else {
       await createExpense.mutateAsync({
@@ -187,6 +189,7 @@ export default function ExpensesPage() {
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         paidAt: data.paidAt ? data.paidAt.toISOString() : undefined,
+        paymentMethod: data.paymentMethod,
       });
     }
   };
@@ -234,7 +237,9 @@ export default function ExpensesPage() {
                       handleDeleteExpense,
                       getCategoryName,
                       getAccountName,
+
                     })}
+                    storageKey="naency:expenses-table"
                     enableSearch={true}
                     searchPlaceholder="Search"
                     enableRowSelection={true}

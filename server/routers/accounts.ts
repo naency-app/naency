@@ -1,9 +1,22 @@
+// server/routers/accounts.ts
+
 import { TRPCError } from '@trpc/server';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { accountMovements, accounts } from '@/db/schema';
+import { accountMovements, accountOpenings, accounts } from '@/db/schema'; // ⬅️ add accountOpenings
 import { db } from '../db';
 import { protectedProcedure, router } from '../trpc';
+
+/** Helper: verifica se a conta tem qualquer movimento */
+async function hasAnyMovement(accountId: string) {
+  const res = await db.execute(sql`
+    SELECT 1
+    FROM account_movements
+    WHERE account_id = ${accountId}
+    LIMIT 1
+  `);
+  return res.rowCount && res.rowCount > 0;
+}
 
 export const accountsRouter = router({
   /** Contas ativas (sem saldo) */
@@ -41,7 +54,6 @@ export const accountsRouter = router({
     .query(async ({ ctx, input }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-      // Usa agregação direta sobre account_movements (sem depender da view)
       const rows = await db.execute(sql`
         SELECT
           a.id,
@@ -107,23 +119,32 @@ export const accountsRouter = router({
       return rows.rows?.[0] ?? null;
     }),
 
-  /** Criar conta (ativa) */
+  /** Criar conta (ativa) + (opcional) saldo inicial */
   create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1),
         type: z.enum(['bank', 'cash', 'credit_card', 'ewallet', 'other']).default('bank'),
         currency: z.string().length(3).default('BRL'),
+        openingAmountCents: z.number().optional(),
+        openingDate: z.preprocess(
+          (v) => (typeof v === 'string' ? new Date(v) : v),
+          z.date().optional()
+        ),
+        openingNote: z.string().max(255).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+      const userId = ctx.userId;
+      if (!userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
       try {
-        const [row] = await db
+        const now = new Date();
+
+        const [acc] = await db
           .insert(accounts)
           .values({
-            userId: ctx.userId,
+            userId: userId,
             name: input.name,
             type: input.type,
             currency: input.currency,
@@ -132,10 +153,32 @@ export const accountsRouter = router({
           })
           .returning();
 
-        return row;
-      } catch (e: any) {
-        // lida com unique index (accounts_user_name_active_uidx)
-        if (e?.code === '23505') {
+        if (typeof input.openingAmountCents === 'number') {
+          const [opening] = await db
+            .insert(accountOpenings)
+            .values({
+              userId: userId,
+              accountId: acc.id,
+              amount: input.openingAmountCents,
+              occurredAt: input.openingDate ?? now,
+              note: input.openingNote ?? 'Saldo inicial',
+            })
+            .returning();
+
+          await db.insert(accountMovements).values({
+            userId: userId,
+            accountId: acc.id,
+            amount: opening.amount,
+            occurredAt: opening.occurredAt,
+            sourceType: 'opening_balance',
+            sourceId: opening.id,
+            note: opening.note,
+          });
+        }
+
+        return acc;
+      } catch (e: unknown) {
+        if (typeof e === 'object' && e && (e as any).code === '23505') {
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'Já existe uma conta ativa com esse nome.',
@@ -145,7 +188,7 @@ export const accountsRouter = router({
       }
     }),
 
-  /** Atualizar conta */
+  /** Atualizar conta (bloqueia mudar type/currency se já tem movimentos) */
   update: protectedProcedure
     .input(
       z.object({
@@ -157,6 +200,15 @@ export const accountsRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      // se for mudar type/currency, exige sem movimentos
+      if ((input.type || input.currency) && (await hasAnyMovement(input.id))) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message:
+            'Não é possível alterar tipo/moeda após existirem movimentos. Arquive e crie outra conta.',
+        });
+      }
 
       try {
         const [row] = await db
@@ -172,9 +224,8 @@ export const accountsRouter = router({
 
         if (!row) throw new TRPCError({ code: 'NOT_FOUND', message: 'Conta não encontrada' });
         return row;
-      } catch (e: any) {
-        // lida com unique index (accounts_user_name_active_uidx)
-        if (e?.code === '23505') {
+      } catch (e: unknown) {
+        if (typeof e === 'object' && e && (e as any).code === '23505') {
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'Já existe uma conta ativa com esse nome.',
@@ -223,9 +274,8 @@ export const accountsRouter = router({
 
         if (!row) throw new TRPCError({ code: 'NOT_FOUND', message: 'Conta não encontrada' });
         return row;
-      } catch (e: any) {
-        // possível conflito de nome ativo ao reativar
-        if (e?.code === '23505') {
+      } catch (e: unknown) {
+        if (typeof e === 'object' && e && (e as any).code === '23505') {
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'Já existe uma conta ativa com esse nome.',

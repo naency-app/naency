@@ -49,7 +49,7 @@ export const expenseColumns = ({
       header: 'Description',
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate capitalize" title={row.getValue('name')}>
-          {row.getValue('name')}
+          {String(row.getValue('name')).toUpperCase()}
         </div>
       ),
     },
@@ -74,6 +74,16 @@ export const expenseColumns = ({
         return <CategoryBadge color={category.color} name={category.name} />;
       },
     },
+    {
+      accessorKey: 'paymentMethod',
+      header: 'Method',
+      cell: ({ row }) => {
+        const method = String(row.getValue('paymentMethod') ?? 'unspecified');
+        const label = method.replaceAll('_', ' ');
+        return <Badge variant="secondary">{label}</Badge>;
+      },
+    },
+
     {
       id: 'actions',
       header: 'Actions',
