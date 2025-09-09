@@ -220,8 +220,9 @@ export default function IncomesPage() {
                       handleEditIncome,
                       handleDeleteIncome,
                       getCategoryName,
-                      getAccountName, // <-- unificado
+                      getAccountName,
                     })}
+                    storageKey="naency:incomes-table"
                     enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search"

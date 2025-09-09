@@ -239,6 +239,7 @@ export default function ExpensesPage() {
                       getAccountName,
 
                     })}
+                    storageKey="naency:expenses-table"
                     enableSearch={true}
                     searchPlaceholder="Search"
                     enableRowSelection={true}

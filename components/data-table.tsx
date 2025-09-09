@@ -20,11 +20,13 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
+  IconArrowsSort,
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
   IconChevronsLeft,
   IconChevronsRight,
+  IconChevronUp,
   IconGripVertical,
   IconLayoutColumns,
 } from '@tabler/icons-react';
@@ -72,7 +74,7 @@ import {
 } from '@/components/ui/table';
 
 // Create a separate component for the drag handle
-function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> }) {
+function DragHandle({ id }: { id: UniqueIdentifier }) {
   const { attributes, listeners } = useSortable({
     id,
   });
@@ -93,12 +95,10 @@ function DragHandle<TData>({ id, row }: { id: UniqueIdentifier; row: Row<TData> 
 
 function DataTableRow<TData>({
   row,
-  columns,
   enableDragAndDrop = false,
   onRowClick,
 }: {
   row: Row<TData>;
-  columns: ColumnDef<TData>[];
   enableDragAndDrop?: boolean;
   onRowClick?: (row: Row<TData>) => void;
 }) {
@@ -167,6 +167,7 @@ export interface DataTableProps<TData> {
   emptyMessage?: string;
   pageSizeOptions?: number[];
   defaultPageSize?: number;
+  storageKey?: string;
 }
 
 export function DataTable<TData>({
@@ -187,19 +188,40 @@ export function DataTable<TData>({
   emptyMessage = 'No results.',
   pageSizeOptions = [10, 20, 30, 40, 50],
   defaultPageSize = 10,
+  storageKey,
 }: DataTableProps<TData>) {
   // Ensure initialData is always an array
   const safeInitialData = Array.isArray(initialData) ? initialData : [];
+  type PersistedTableState = {
+    sorting?: SortingState;
+    columnVisibility?: VisibilityState;
+    columnFilters?: ColumnFiltersState;
+    pagination?: { pageIndex: number; pageSize: number };
+    globalFilter?: string;
+  };
+
+  const persisted: PersistedTableState | null = React.useMemo(() => {
+    if (!storageKey) return null;
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) return null;
+      return JSON.parse(raw) as PersistedTableState;
+    } catch {
+      return null;
+    }
+  }, [storageKey]);
+
   const [data, setData] = React.useState(() => safeInitialData);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [pagination, setPagination] = React.useState({
-    pageIndex: 0,
-    pageSize: defaultPageSize,
-  });
-  const [globalFilter, setGlobalFilter] = React.useState('');
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => persisted?.columnVisibility ?? {});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(() => persisted?.columnFilters ?? []);
+  const [sorting, setSorting] = React.useState<SortingState>(() => persisted?.sorting ?? []);
+  const [pagination, setPagination] = React.useState(() => ({
+    pageIndex: persisted?.pagination?.pageIndex ?? 0,
+    pageSize: persisted?.pagination?.pageSize ?? defaultPageSize,
+  }));
+  const [globalFilter, setGlobalFilter] = React.useState(() => persisted?.globalFilter ?? '');
 
   const sortableId = React.useId();
   const rowsPerPageId = React.useId();
@@ -222,7 +244,7 @@ export function DataTable<TData>({
         {
           id: 'drag',
           header: () => null,
-          cell: ({ row }) => <DragHandle id={row.id} row={row} />,
+          cell: ({ row }) => <DragHandle id={row.id} />,
           enableSorting: false,
           enableHiding: false,
         },
@@ -303,6 +325,21 @@ export function DataTable<TData>({
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
+
+  // Persist table state if storageKey provided
+  React.useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const toStore: PersistedTableState = {
+        sorting,
+        columnVisibility,
+        columnFilters,
+        pagination,
+        globalFilter,
+      };
+      window.localStorage.setItem(storageKey, JSON.stringify(toStore));
+    } catch { }
+  }, [storageKey, sorting, columnVisibility, columnFilters, pagination, globalFilter]);
 
   function handleDragEnd(event: DragEndEvent) {
     if (!enableDragAndDrop) return;
@@ -404,11 +441,39 @@ export function DataTable<TData>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
+                      const canSort = header.column.getCanSort();
+                      const sortState = header.column.getIsSorted();
+                      const ariaSort: 'ascending' | 'descending' | 'none' =
+                        sortState === 'asc'
+                          ? 'ascending'
+                          : sortState === 'desc'
+                            ? 'descending'
+                            : 'none';
                       return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        <TableHead
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          aria-sort={canSort ? ariaSort : undefined}
+                        >
+                          {header.isPlaceholder ? null : canSort ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex items-center gap-2 -ml-2 h-8 px-2"
+                              onClick={header.column.getToggleSortingHandler()}
+                            >
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              {sortState === 'asc' ? (
+                                <IconChevronUp className="h-4 w-4" />
+                              ) : sortState === 'desc' ? (
+                                <IconChevronDown className="h-4 w-4" />
+                              ) : (
+                                <IconArrowsSort className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
+                          ) : (
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
                         </TableHead>
                       );
                     })}
@@ -422,7 +487,6 @@ export function DataTable<TData>({
                       <DataTableRow
                         key={row.id}
                         row={row}
-                        columns={finalColumns}
                         enableDragAndDrop={enableDragAndDrop}
                         onRowClick={onRowClick}
                       />
@@ -444,11 +508,39 @@ export function DataTable<TData>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
+                    const canSort = header.column.getCanSort();
+                    const sortState = header.column.getIsSorted();
+                    const ariaSort: 'ascending' | 'descending' | 'none' =
+                      sortState === 'asc'
+                        ? 'ascending'
+                        : sortState === 'desc'
+                          ? 'descending'
+                          : 'none';
                     return (
-                      <TableHead key={header.id} colSpan={header.colSpan}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      <TableHead
+                        key={header.id}
+                        colSpan={header.colSpan}
+                        aria-sort={canSort ? ariaSort : undefined}
+                      >
+                        {header.isPlaceholder ? null : canSort ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="flex items-center gap-2 -ml-2 h-8 px-2"
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {sortState === 'asc' ? (
+                              <IconChevronUp className="h-4 w-4" />
+                            ) : sortState === 'desc' ? (
+                              <IconChevronDown className="h-4 w-4" />
+                            ) : (
+                              <IconArrowsSort className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                        ) : (
+                          flexRender(header.column.columnDef.header, header.getContext())
+                        )}
                       </TableHead>
                     );
                   })}
@@ -461,7 +553,6 @@ export function DataTable<TData>({
                   <DataTableRow
                     key={row.id}
                     row={row}
-                    columns={finalColumns}
                     enableDragAndDrop={false}
                     onRowClick={onRowClick}
                   />
