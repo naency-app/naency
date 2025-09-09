@@ -76,6 +76,16 @@ export const incomeColumns = ({
       },
     },
     {
+      accessorKey: 'paymentMethod',
+      header: 'Method',
+      cell: ({ row }) => {
+        const method = String(row.getValue('paymentMethod') ?? 'unspecified');
+        const label = method.replaceAll('_', ' ');
+        return <Badge variant="secondary">{label}</Badge>;
+      },
+    },
+
+    {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (

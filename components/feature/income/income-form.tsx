@@ -41,6 +41,22 @@ import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
 import type { AccountFromTRPC, IncomeFromTRPC } from '@/types/trpc';
 
+const paymentMethodValues = [
+  'unspecified',
+  'cash',
+  'pix',
+  'boleto',
+  'debit_card',
+  'credit_card',
+  'bank_transfer',
+  'ted',
+  'doc',
+  'ewallet',
+  'paypal',
+  'other',
+] as const;
+type PaymentMethod = (typeof paymentMethodValues)[number];
+
 // --- Schema fora do componente (já estava) ---
 const incomeSchema = z.object({
   description: z.string().min(1, 'Description is required'),
@@ -48,9 +64,10 @@ const incomeSchema = z.object({
   categoryId: z.string().uuid().nullable().optional(),
   accountId: z.string().uuid({ message: 'Select an account' }),
   receivedAt: z.string().optional(),
+  paymentMethod: z.enum(paymentMethodValues).default('unspecified'),
 });
 
-type IncomeFormData = z.infer<typeof incomeSchema>;
+type IncomeFormData = z.input<typeof incomeSchema>;
 
 type ProcessedIncomeData = {
   description: string;
@@ -58,6 +75,7 @@ type ProcessedIncomeData = {
   categoryId?: string | null;
   accountId: string;
   receivedAt?: Date;
+  paymentMethod: PaymentMethod;
 };
 
 interface IncomeFormProps {
@@ -89,6 +107,7 @@ export function IncomeForm({
       categoryId: income?.categoryId ?? null,
       accountId: income?.accountId ?? '',
       receivedAt: income?.receivedAt ? new Date(income.receivedAt).toISOString() : undefined,
+      paymentMethod: (income?.paymentMethod as PaymentMethod) ?? 'unspecified',
     }),
     [income]
   );
@@ -147,6 +166,7 @@ export function IncomeForm({
         categoryId: data.categoryId || undefined,
         accountId: data.accountId,
         receivedAt: data.receivedAt ? new Date(data.receivedAt) : undefined,
+        paymentMethod: (data.paymentMethod ?? 'unspecified') as PaymentMethod,
       };
       await onSubmit(cleanedData);
       if (income) {
@@ -322,6 +342,34 @@ export function IncomeForm({
             </FormItem>
           )}
         />
+
+        {/* Payment method */}
+        <FormField
+          control={form.control}
+          name="paymentMethod"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Payment method</FormLabel>
+              <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                <FormControl>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a method" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {paymentMethodValues.map((m) => (
+                    <SelectItem key={m} value={m}>
+                      {m.replaceAll('_', ' ')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+
 
         {/* Category */}
         <FormField

@@ -85,6 +85,13 @@
       "when": 1757021193967,
       "tag": "0011_motionless_vindicator",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1757351942268,
+      "tag": "0012_dapper_mastermind",
+      "breakpoints": true
     }
   ]
 }

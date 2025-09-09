@@ -44,15 +44,33 @@ import { formatCentsBRL, parseCurrencyToCents } from '@/helps/formatCurrency';
 import { cn } from '@/lib/utils';
 import type { AccountFromTRPC, ExpenseFromTRPC } from '@/types/trpc';
 
+const paymentMethodValues = [
+  'unspecified',
+  'cash',
+  'pix',
+  'boleto',
+  'debit_card',
+  'credit_card',
+  'bank_transfer',
+  'ted',
+  'doc',
+  'ewallet',
+  'paypal',
+  'other',
+] as const;
+
+type PaymentMethod = (typeof paymentMethodValues)[number];
+
 const expenseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   amount: z.number().min(1, 'Amount is required'), // em centavos
   categoryId: z.string().uuid().nullable().optional(),
   accountId: z.string().uuid({ message: 'Select an account' }), // <-- NOVO (obrigatório)
   paidAt: z.string().optional(),
+  paymentMethod: z.enum(paymentMethodValues).default('unspecified'),
 });
 
-type ExpenseFormData = z.infer<typeof expenseSchema>;
+type ExpenseFormData = z.input<typeof expenseSchema>;
 
 type ProcessedExpenseData = {
   name: string;
@@ -61,6 +79,7 @@ type ProcessedExpenseData = {
   accountId: string; // <-- NOVO
   paidAt?: Date;
   parentCategoryId?: string | null;
+  paymentMethod: PaymentMethod;
 };
 
 interface ExpenseFormProps {
@@ -101,6 +120,7 @@ export function ExpenseForm({
       categoryId: expense?.categoryId ?? null,
       accountId: expense?.accountId ?? '', // requerido; ficará inválido até escolher
       paidAt: expense?.paidAt ? new Date(expense.paidAt).toISOString() : undefined,
+      paymentMethod: (expense?.paymentMethod as PaymentMethod) ?? 'unspecified',
     },
     mode: 'onChange',
   });
@@ -121,6 +141,7 @@ export function ExpenseForm({
       categoryId: expense?.categoryId ?? null,
       accountId: expense?.accountId ?? '',
       paidAt: expense?.paidAt ? new Date(expense.paidAt).toISOString() : undefined,
+      paymentMethod: (expense?.paymentMethod as PaymentMethod) ?? 'unspecified',
     });
     setDate(expense?.paidAt ? new Date(expense.paidAt) : new Date());
     setIsDatePopoverOpen(false);
@@ -163,6 +184,7 @@ export function ExpenseForm({
       categoryId: data.categoryId || undefined,
       accountId: data.accountId, // <-- NOVO
       paidAt: data.paidAt ? new Date(data.paidAt) : undefined,
+      paymentMethod: (data.paymentMethod ?? 'unspecified') as PaymentMethod,
     };
 
     try {
@@ -342,6 +364,33 @@ export function ExpenseForm({
               </FormItem>
             )}
           />
+
+          {/* Payment method */}
+          <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Payment method</FormLabel>
+                <Select value={field.value} onValueChange={field.onChange} disabled={isLoading}>
+                  <FormControl>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a method" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {paymentMethodValues.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m.replaceAll('_', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
 
           {/* Categoria (mantida) */}
           <FormField

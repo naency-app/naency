@@ -2,7 +2,13 @@ import { TRPCError } from '@trpc/server';
 import { and, eq, gte, inArray, lte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/drizzle';
-import { accountMovements, accounts, categories, incomes } from '@/db/schema';
+import {
+  accountMovements,
+  accounts,
+  categories,
+  incomes,
+  type paymentMethodEnum,
+} from '@/db/schema';
 import { protectedProcedure, router } from '../trpc';
 
 const baseIncome = z.object({
@@ -11,6 +17,23 @@ const baseIncome = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   receivedAt: z.coerce.date().optional().nullable(),
   accountId: z.string().uuid(), // <-- unificado no schema atual
+  paymentMethod: z
+    .enum([
+      'unspecified',
+      'cash',
+      'pix',
+      'boleto',
+      'debit_card',
+      'credit_card',
+      'bank_transfer',
+      'ted',
+      'doc',
+      'ewallet',
+      'paypal',
+      'other',
+    ])
+    .default('unspecified'),
+  paymentRef: z.string().max(120).optional(),
 });
 
 const dateRangeFilter = z.object({
@@ -46,7 +69,7 @@ export const incomesRouter = router({
   getAll: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-    const conds: any[] = [eq(incomes.userId, ctx.userId)];
+    const conds = [eq(incomes.userId, ctx.userId)];
     if (input?.from) conds.push(gte(incomes.receivedAt, input.from));
     if (input?.to) {
       const endDate = new Date(input.to);
@@ -64,7 +87,7 @@ export const incomesRouter = router({
   getTotal: protectedProcedure.input(dateRangeFilter.optional()).query(async ({ ctx, input }) => {
     if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
-    const conds: any[] = [eq(incomes.userId, ctx.userId)];
+    const conds = [eq(incomes.userId, ctx.userId)];
     if (input?.from) conds.push(gte(incomes.receivedAt, input.from));
     if (input?.to) {
       const endDate = new Date(input.to);
@@ -95,6 +118,9 @@ export const incomesRouter = router({
         receivedAt: input.receivedAt ?? new Date(),
         accountId: input.accountId,
         categoryId: input.categoryId ?? null,
+        paymentMethod: (input.paymentMethod ??
+          'unspecified') as (typeof paymentMethodEnum.enumValues)[number],
+        paymentRef: input.paymentRef ?? null,
       })
       .returning();
 
@@ -150,6 +176,9 @@ export const incomesRouter = router({
           receivedAt: input.receivedAt ?? new Date(),
           accountId: input.accountId,
           categoryId: input.categoryId ?? null,
+          paymentMethod: (input.paymentMethod ??
+            'unspecified') as (typeof paymentMethodEnum.enumValues)[number],
+          paymentRef: input.paymentRef ?? null,
         })
         .where(and(eq(incomes.id, input.id), eq(incomes.userId, ctx.userId)))
         .returning();

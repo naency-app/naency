@@ -30,6 +30,22 @@ export const accountTypeEnum = pgEnum('account_type', [
   'other',
 ]);
 
+// Forma de pagamento (canal/método)
+export const paymentMethodEnum = pgEnum('payment_method', [
+  'unspecified',
+  'cash',
+  'pix',
+  'boleto',
+  'debit_card',
+  'credit_card',
+  'bank_transfer',
+  'ted',
+  'doc',
+  'ewallet',
+  'paypal',
+  'other',
+]);
+
 // ✅ adicionamos duas novas fontes
 export const movementSourceTypeEnum = pgEnum('movement_source_type', [
   'expense',
@@ -255,12 +271,15 @@ export const expenses = pgTable(
     accountId: uuid('account_id')
       .notNull()
       .references(() => accounts.id, { onDelete: 'restrict' }),
+    paymentMethod: paymentMethodEnum('payment_method').notNull().default('unspecified'),
+    paymentRef: varchar('payment_ref', { length: 120 }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (t) => ({
     userIdx: index('expenses_user_id_idx').on(t.userId),
     categoryIdx: index('expenses_category_id_idx').on(t.categoryId),
     accountIdx: index('expenses_account_id_idx').on(t.accountId),
+    paymentMethodIdx: index('expenses_payment_method_idx').on(t.paymentMethod),
     nonNegativeAmount: check('expenses_amount_non_negative', sql`${t.amount} >= 0`),
   })
 );
@@ -279,12 +298,15 @@ export const incomes = pgTable(
       .notNull()
       .references(() => accounts.id, { onDelete: 'restrict' }),
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    paymentMethod: paymentMethodEnum('payment_method').notNull().default('unspecified'),
+    paymentRef: varchar('payment_ref', { length: 120 }),
     createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull().defaultNow(),
   },
   (t) => ({
     userDateIdx: index('incomes_user_received_at_idx').on(t.userId, t.receivedAt),
     accountIdx: index('incomes_account_id_idx').on(t.accountId),
     categoryIdx: index('incomes_category_id_idx').on(t.categoryId),
+    paymentMethodIdx: index('incomes_payment_method_idx').on(t.paymentMethod),
     nonNegativeAmount: check('incomes_amount_non_negative', sql`${t.amount} >= 0`),
   })
 );
