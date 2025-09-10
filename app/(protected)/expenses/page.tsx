@@ -34,12 +34,12 @@ export default function ExpensesPage() {
   const { isMobile } = useSidebar();
   const { dateRange } = useDateFilter();
 
-  const { data: expensesData } = trpc.expenses.getAll.useQuery({
+  const { data: expensesData, isLoading: expensesLoading } = trpc.expenses.getAll.useQuery({
     from: dateRange.from,
     to: dateRange.to,
   });
-  const { data: categoriesData } = trpc.categories.getAll.useQuery(); // retorna ativas por padrão
-  const { data: accountsData } = trpc.accounts.getAll.useQuery(); // <-- NOVO (substitui paidBy/transactionAccounts)
+  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery();
+  const { data: accountsData, isLoading: accountsLoading } = trpc.accounts.getAll.useQuery();
   const utils = trpc.useUtils();
 
   const createExpense = trpc.expenses.create.useMutation({
@@ -119,7 +119,6 @@ export default function ExpensesPage() {
     return { name: category?.name || 'No category', color: category?.color || '#000' };
   };
 
-  // NOVO: nome da conta unificada
   const getAccountName = (accountId: string | null | undefined) => {
     if (!accountId || !accountsData) return null;
     const acc = accountsData.find((a) => a.id === accountId);
@@ -163,12 +162,11 @@ export default function ExpensesPage() {
     }
   };
 
-  // payloads agora usam accountId
   const handleFormSubmit = async (data: {
     name: string;
     amount: number;
     categoryId?: string | null;
-    accountId: string; // <-- obrigatório
+    accountId: string;
     paidAt?: Date;
     paymentMethod: CreateExpenseInput['paymentMethod'];
   }) => {
@@ -240,6 +238,7 @@ export default function ExpensesPage() {
 
                     })}
                     storageKey="naency:expenses-table"
+                    loading={expensesLoading || categoriesLoading || accountsLoading}
                     enableSearch={true}
                     searchPlaceholder="Search"
                     enableRowSelection={true}

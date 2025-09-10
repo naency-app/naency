@@ -35,12 +35,12 @@ export default function IncomesPage() {
   const { isMobile } = useSidebar();
   const { dateRange } = useDateFilter();
 
-  const { data: incomesData } = trpc.incomes.getAll.useQuery({
+  const { data: incomesData, isLoading: incomesLoading } = trpc.incomes.getAll.useQuery({
     from: dateRange.from,
     to: dateRange.to,
   });
-  const { data: categoriesData } = trpc.categories.getAll.useQuery();
-  const { data: accountsData } = trpc.accounts.getAll.useQuery(); // <-- unificado
+  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery();
+  const { data: accountsData, isLoading: accountsLoading } = trpc.accounts.getAll.useQuery(); // <-- unificado
   const utils = trpc.useUtils();
 
   const createIncome = trpc.incomes.create.useMutation({
@@ -223,6 +223,7 @@ export default function IncomesPage() {
                       getAccountName,
                     })}
                     storageKey="naency:incomes-table"
+                    loading={incomesLoading || categoriesLoading || accountsLoading}
                     enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search"

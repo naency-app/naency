@@ -47,13 +47,14 @@ export const expenseColumns = ({
     {
       accessorKey: 'name',
       header: 'Description',
+      maxSize: 200,
+      size: 400,
       cell: ({ row }) => (
         <div className="max-w-[200px] truncate capitalize" title={row.getValue('name')}>
           {String(row.getValue('name')).toUpperCase()}
         </div>
       ),
     },
-    // ---- NOVO: conta unificada ----
     {
       accessorKey: 'accountId',
       header: 'Account',
