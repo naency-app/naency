@@ -224,7 +224,6 @@ export default function IncomesPage() {
                     })}
                     storageKey="naency:incomes-table"
                     loading={incomesLoading || categoriesLoading || accountsLoading}
-                    enableDragAndDrop={true}
                     enableSearch={true}
                     searchPlaceholder="Search"
                     enableRowSelection={true}
