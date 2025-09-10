@@ -1,17 +1,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerContent,
@@ -35,13 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useSidebar } from '@/components/ui/sidebar';
 import { trpc } from '@/lib/trpc';
 import type { CategoryFromTRPC } from '@/types/trpc';
 
 const categoryFormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  color: z.string().optional(),
   flow: z.enum(['expense', 'income']),
   parentId: z.string().optional(),
 });
@@ -69,8 +60,6 @@ export function CategoryForm({
   direction = 'right',
   defaultFlow = 'expense',
 }: CategoryFormProps) {
-  const { isMobile } = useSidebar();
-  const [selectedColor, setSelectedColor] = useState('#000000');
 
   const { data: categoriesData } = trpc.categories.getAll.useQuery();
 
@@ -78,7 +67,6 @@ export function CategoryForm({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: '',
-      color: '#000000',
       flow: defaultFlow,
       parentId: undefined,
     },
@@ -88,19 +76,15 @@ export function CategoryForm({
     if (category) {
       form.reset({
         name: category.name,
-        color: category.color || '#000000',
         flow: category.flow,
         parentId: category.parentId || undefined,
       });
-      setSelectedColor(category.color || '#000000');
     } else {
       form.reset({
         name: '',
-        color: '#000000',
         flow: defaultFlow,
         parentId: undefined,
       });
-      setSelectedColor('#000000');
     }
   }, [category, form, defaultFlow]);
 
@@ -113,14 +97,30 @@ export function CategoryForm({
     onCancel();
   };
 
+  // Function to check if a category can be a parent (avoiding cycles)
+  const canBeParent = (potentialParentId: string, currentCategoryId?: string): boolean => {
+    if (!currentCategoryId || potentialParentId === currentCategoryId) return false;
+
+    // Check if current category is a descendant of potential parent
+    const isDescendant = (parentId: string, childId: string): boolean => {
+      const child = categoriesData?.find(cat => cat.id === childId);
+      if (!child || !child.parentId) return false;
+      if (child.parentId === parentId) return true;
+      return isDescendant(parentId, child.parentId);
+    };
+
+    return !isDescendant(potentialParentId, currentCategoryId);
+  };
+
+  // Filter parent categories based on current flow and exclude current category and its descendants
   const parentCategories = categoriesData?.filter(
-    cat => !cat.isArchived && cat.flow === form.watch('flow') && cat.id !== category?.id
+    cat => !cat.isArchived &&
+      cat.flow === form.watch('flow') &&
+      cat.id !== category?.id &&
+      cat.parentId === null && // Only show root categories as potential parents
+      canBeParent(cat.id, category?.id)
   ) || [];
 
-  const colorOptions = [
-    '#000000', '#ef4444', '#f97316', '#eab308', '#22c55e',
-    '#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280'
-  ];
 
   const formContent = (
     <Form {...form}>
@@ -147,7 +147,7 @@ export function CategoryForm({
               <FormLabel>Flow</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full'>
                     <SelectValue placeholder="Select flow" />
                   </SelectTrigger>
                 </FormControl>
@@ -167,14 +167,14 @@ export function CategoryForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Parent Category (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={(value) => field.onChange(value === "none" ? undefined : value)} value={field.value || "none"}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className='w-full'>
                     <SelectValue placeholder="Select parent category" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No parent</SelectItem>
+                  <SelectItem value="none">No parent (Root category)</SelectItem>
                   {parentCategories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -183,53 +183,21 @@ export function CategoryForm({
                 </SelectContent>
               </Select>
               <FormMessage />
+              {category?.parentId && (
+                <p className="text-sm text-muted-foreground">
+                  This is a subcategory. Changing the parent will move it to a different hierarchy.
+                </p>
+              )}
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="color"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Color</FormLabel>
-              <FormControl>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="color"
-                    value={selectedColor}
-                    onChange={(e) => {
-                      setSelectedColor(e.target.value);
-                      field.onChange(e.target.value);
-                    }}
-                    className="w-12 h-10 p-1 border rounded"
-                  />
-                  <div className="flex gap-1">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className="w-6 h-6 rounded border-2 border-gray-300"
-                        style={{ backgroundColor: color }}
-                        onClick={() => {
-                          setSelectedColor(color);
-                          field.onChange(color);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={handleCancel}>
+          <Button type="button" className='flex-1' variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" className='flex-1' disabled={isLoading}>
             {isLoading ? 'Saving...' : category ? 'Update' : 'Create'}
           </Button>
         </div>
@@ -237,39 +205,21 @@ export function CategoryForm({
     </Form>
   );
 
-  if (isMobile) {
-    return (
-      <Drawer open={open} onOpenChange={onOpenChange} direction={direction}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>
-              {category ? 'Edit Category' : 'Create Category'}
-            </DrawerTitle>
-            <DrawerDescription>
-              {category ? 'Update category details' : 'Add a new category to organize your transactions'}
-            </DrawerDescription>
-          </DrawerHeader>
-          <div className="px-4 pb-4">
-            {formContent}
-          </div>
-        </DrawerContent>
-      </Drawer>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
+    <Drawer open={open} onOpenChange={onOpenChange} direction={direction}>
+      <DrawerContent>
+        <DrawerHeader>
+          <DrawerTitle>
             {category ? 'Edit Category' : 'Create Category'}
-          </DialogTitle>
-          <DialogDescription>
+          </DrawerTitle>
+          <DrawerDescription>
             {category ? 'Update category details' : 'Add a new category to organize your transactions'}
-          </DialogDescription>
-        </DialogHeader>
-        {formContent}
-      </DialogContent>
-    </Dialog>
+          </DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 pb-4">
+          {formContent}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
