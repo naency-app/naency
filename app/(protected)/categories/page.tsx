@@ -239,12 +239,6 @@ export default function CategoriesPage() {
                       </TabsList>
 
                       <TabsContent value="expense" className="mt-4">
-                        {(() => {
-                          console.log('Rendering expense tab - showArchived:', showArchived);
-                          console.log('Rendering expense tab - expenseCategories:', expenseCategories);
-                          console.log('Rendering expense tab - expenseCategories.length:', expenseCategories.length);
-                          return null;
-                        })()}
                         {expenseCategories.length > 0 ? (
                           <SimpleCategoryTree
                             data={expenseCategories}

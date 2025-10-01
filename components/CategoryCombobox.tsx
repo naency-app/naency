@@ -46,7 +46,7 @@ export default function CategoryCombobox({
 
   const { data, isLoading } = trpc.categories.getHierarchical.useQuery({
     flow,
-    includeArchived: true
+    includeArchived: false
   });
 
   type Node = { id: string; name: string; color?: string | null; subcategories?: Node[] };
