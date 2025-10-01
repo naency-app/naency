@@ -35,7 +35,7 @@ async function ensureNoCycle(userId: string, id: string, newParentId?: string | 
     )
     SELECT id FROM tree;
   `);
-  const ids: string[] = descendants.rows?.map((r: any) => r.id) ?? [];
+  const ids: string[] = descendants.rows?.map((r: Record<string, unknown>) => r.id as string) ?? [];
   if (ids.includes(newParentId)) {
     throw new TRPCError({ code: 'BAD_REQUEST', message: 'Referência circular detectada' });
   }
@@ -145,6 +145,11 @@ export const categoriesRouter = router({
 
   getById: publicProcedure.input(z.object({ id: z.string() })).query(async ({ input, ctx }) => {
     if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+    if (!input.id || input.id.trim() === '') {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'ID da categoria é obrigatório' });
+    }
+
     const result = await db
       .select()
       .from(categories)
@@ -166,7 +171,7 @@ export const categoriesRouter = router({
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
       let finalFlow = input.flow;
-      if (input.parentId) {
+      if (input.parentId && input.parentId.trim() !== '') {
         const parent = await getCategoryOwned(ctx.userId, input.parentId);
         if (!parent)
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai não encontrada' });
@@ -182,7 +187,7 @@ export const categoriesRouter = router({
           userId: ctx.userId,
           name: input.name,
           color: input.color,
-          parentId: input.parentId,
+          parentId: input.parentId && input.parentId.trim() !== '' ? input.parentId : null,
           flow: finalFlow,
           isArchived: false,
           archivedAt: null,
@@ -206,11 +211,15 @@ export const categoriesRouter = router({
     .mutation(async ({ input, ctx }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
 
+      if (!input.id || input.id.trim() === '') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'ID da categoria é obrigatório' });
+      }
+
       const current = await getCategoryOwned(ctx.userId, input.id);
       if (!current) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });
 
       // Se setar novo pai, valida existência, arquivamento e evita ciclo
-      if (typeof input.parentId !== 'undefined' && input.parentId) {
+      if (typeof input.parentId !== 'undefined' && input.parentId && input.parentId.trim() !== '') {
         const parent = await getCategoryOwned(ctx.userId, input.parentId);
         if (!parent)
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Categoria pai não encontrada' });
@@ -243,7 +252,11 @@ export const categoriesRouter = router({
           name: input.name ?? current.name,
           color: input.color ?? current.color,
           parentId:
-            typeof input.parentId === 'undefined' ? current.parentId : input.parentId || null,
+            typeof input.parentId === 'undefined'
+              ? current.parentId
+              : input.parentId && input.parentId.trim() !== ''
+                ? input.parentId
+                : null,
           flow: typeof input.flow === 'undefined' ? current.flow : input.flow,
         })
         .where(and(eq(categories.id, input.id), eq(categories.userId, ctx.userId)))
@@ -257,6 +270,10 @@ export const categoriesRouter = router({
     .input(z.object({ id: z.string(), cascade: z.boolean().optional().default(false) }))
     .mutation(async ({ input, ctx }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      if (!input.id || input.id.trim() === '') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'ID da categoria é obrigatório' });
+      }
 
       const cat = await getCategoryOwned(ctx.userId, input.id);
       if (!cat) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });
@@ -314,6 +331,10 @@ export const categoriesRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       if (!ctx.userId) throw new TRPCError({ code: 'UNAUTHORIZED' });
+
+      if (!input.id || input.id.trim() === '') {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'ID da categoria é obrigatório' });
+      }
 
       const cat = await getCategoryOwned(ctx.userId, input.id);
       if (!cat) throw new TRPCError({ code: 'NOT_FOUND', message: 'Categoria não encontrada' });

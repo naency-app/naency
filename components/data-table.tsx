@@ -64,6 +64,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -168,6 +169,7 @@ export interface DataTableProps<TData> {
   pageSizeOptions?: number[];
   defaultPageSize?: number;
   storageKey?: string;
+  loading?: boolean;
 }
 
 export function DataTable<TData>({
@@ -189,8 +191,8 @@ export function DataTable<TData>({
   pageSizeOptions = [10, 20, 30, 40, 50],
   defaultPageSize = 10,
   storageKey,
+  loading = false,
 }: DataTableProps<TData>) {
-  // Ensure initialData is always an array
   const safeInitialData = Array.isArray(initialData) ? initialData : [];
   type PersistedTableState = {
     sorting?: SortingState;
@@ -214,8 +216,12 @@ export function DataTable<TData>({
 
   const [data, setData] = React.useState(() => safeInitialData);
   const [rowSelection, setRowSelection] = React.useState({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(() => persisted?.columnVisibility ?? {});
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(() => persisted?.columnFilters ?? []);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>(
+    () => persisted?.columnVisibility ?? {}
+  );
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    () => persisted?.columnFilters ?? []
+  );
   const [sorting, setSorting] = React.useState<SortingState>(() => persisted?.sorting ?? []);
   const [pagination, setPagination] = React.useState(() => ({
     pageIndex: persisted?.pagination?.pageIndex ?? 0,
@@ -272,6 +278,7 @@ export function DataTable<TData>({
               />
             </div>
           ),
+
           cell: ({ row }: { row: Row<TData> }) => (
             <div className="flex items-center justify-center">
               <Checkbox
@@ -354,13 +361,11 @@ export function DataTable<TData>({
     }
   }
 
-  // Update data when initialData changes
   React.useEffect(() => {
     const safeData = Array.isArray(initialData) ? initialData : [];
     setData(safeData);
   }, [initialData]);
 
-  // Ensure table is properly initialized
   if (!table || !table.getRowModel || !finalColumns || finalColumns.length === 0) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -371,8 +376,22 @@ export function DataTable<TData>({
     );
   }
 
-  // Get rows safely
   const rows = table.getRowModel()?.rows || [];
+
+  // Loading skeleton component
+  const renderLoadingSkeleton = () => (
+    <div className="space-y-2">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={`skeleton-row-${i}-${Math.random()}`} className="flex items-center space-x-4 p-4">
+          {enableRowSelection && <Skeleton className="h-4 w-4" />}
+          {finalColumns.slice(0, -1).map((_, colIndex) => (
+            <Skeleton key={`skeleton-col-${colIndex}-${Math.random()}`} className="h-4 flex-1" />
+          ))}
+          <Skeleton className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className={`w-full ${className}`}>
@@ -386,6 +405,7 @@ export function DataTable<TData>({
                   value={globalFilter ?? ''}
                   onChange={(event) => setGlobalFilter(event.target.value)}
                   className="max-w-sm"
+                  disabled={loading}
                 />
               </div>
             )}
@@ -395,7 +415,7 @@ export function DataTable<TData>({
             {enableColumnVisibility && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" disabled={loading}>
                     <IconLayoutColumns />
                     <span className="hidden lg:inline">Customize columns</span>
                     <span className="lg:hidden">Columns</span>
@@ -415,6 +435,7 @@ export function DataTable<TData>({
                           className="capitalize"
                           checked={column.getIsVisible()}
                           onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                          disabled={loading}
                         >
                           {column.columnDef.header?.toString()}
                         </DropdownMenuCheckboxItem>
@@ -428,7 +449,9 @@ export function DataTable<TData>({
       )}
 
       <div className="overflow-hidden rounded-lg border">
-        {enableDragAndDrop ? (
+        {loading ? (
+          <div className="p-4">{renderLoadingSkeleton()}</div>
+        ) : enableDragAndDrop ? (
           <DndContext
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -585,6 +608,7 @@ export function DataTable<TData>({
                 onValueChange={(value) => {
                   table.setPageSize(Number(value));
                 }}
+                disabled={loading}
               >
                 <SelectTrigger size="sm" className="w-20" id={rowsPerPageId}>
                   <SelectValue placeholder={table.getState().pagination.pageSize} />
@@ -606,7 +630,7 @@ export function DataTable<TData>({
                 variant="outline"
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
-                disabled={!table.getCanPreviousPage()}
+                disabled={loading || !table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to first page</span>
                 <IconChevronsLeft />
@@ -616,7 +640,7 @@ export function DataTable<TData>({
                 className="size-8"
                 size="icon"
                 onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
+                disabled={loading || !table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to previous page</span>
                 <IconChevronLeft />
@@ -626,7 +650,7 @@ export function DataTable<TData>({
                 className="size-8"
                 size="icon"
                 onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
+                disabled={loading || !table.getCanNextPage()}
               >
                 <span className="sr-only">Go to next page</span>
                 <IconChevronRight />
@@ -636,7 +660,7 @@ export function DataTable<TData>({
                 className="hidden size-8 lg:flex"
                 size="icon"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                disabled={!table.getCanNextPage()}
+                disabled={loading || !table.getCanNextPage()}
               >
                 <span className="sr-only">Go to last page</span>
                 <IconChevronsRight />
