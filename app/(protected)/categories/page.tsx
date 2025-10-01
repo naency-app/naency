@@ -1,6 +1,6 @@
 'use client';
 
-import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
+import { IconArchive, IconArchiveOff } from '@tabler/icons-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { CreateFormsWrapper } from '@/components/create-forms-wrapper';
@@ -30,14 +30,38 @@ export default function CategoriesPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<CategoryFromTRPC | null>(null);
   const [activeTab, setActiveTab] = useState<'expense' | 'income'>('expense');
+  const [showArchived, setShowArchived] = useState(false);
   const { isMobile } = useSidebar();
 
-  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery({
+    includeArchived: true,
+  });
   const utils = trpc.useUtils();
 
 
-  const expenseCategories = categoriesData?.filter((cat) => cat.flow === 'expense') || [];
-  const incomeCategories = categoriesData?.filter((cat) => cat.flow === 'income') || [];
+  const expenseCategories = categoriesData?.filter((cat) => {
+    const isExpense = cat.flow === 'expense';
+    const isArchived = cat.isArchived === true;
+    const shouldShow = showArchived ? isArchived : !isArchived;
+    return isExpense && shouldShow;
+  }) || [];
+
+  const incomeCategories = categoriesData?.filter((cat) => {
+    const isIncome = cat.flow === 'income';
+    const isArchived = cat.isArchived === true;
+    const shouldShow = showArchived ? isArchived : !isArchived;
+    return isIncome && shouldShow;
+  }) || [];
+
+  // Count archived categories
+  const archivedExpenseCount = categoriesData?.filter((cat) =>
+    cat.flow === 'expense' && cat.isArchived
+  ).length || 0;
+  const archivedIncomeCount = categoriesData?.filter((cat) =>
+    cat.flow === 'income' && cat.isArchived
+  ).length || 0;
+  const totalArchivedCount = archivedExpenseCount + archivedIncomeCount;
+
 
   const createCategory = trpc.categories.create.useMutation({
     onSuccess: () => {
@@ -162,16 +186,40 @@ export default function CategoriesPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <CardTitle>Category management</CardTitle>
-                      <CardDescription>Here you can manage your categories</CardDescription>
+                      <CardDescription>
+                        Here you can manage your categories
+                        {totalArchivedCount > 0 && (
+                          <span className="ml-2 text-sm text-muted-foreground">
+                            ({totalArchivedCount} archived)
+                          </span>
+                        )}
+                      </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant={showArchived ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setShowArchived(!showArchived)}
+                        disabled={totalArchivedCount === 0 && !showArchived}
+                      >
+                        {showArchived ? (
+                          <>
+                            <IconArchiveOff className="mr-2 h-4 w-4" />
+                            Show Active
+                          </>
+                        ) : (
+                          <>
+                            <IconArchive className="mr-2 h-4 w-4" />
+                            Show Archived ({totalArchivedCount})
+                          </>
+                        )}
+                      </Button>
                       <CreateFormsWrapper
                         context="category"
                         onSuccess={() => {
                           utils.categories.getAll.invalidate();
                         }}
                       />
-
                     </div>
                   </div>
                 </CardHeader>
@@ -191,6 +239,12 @@ export default function CategoriesPage() {
                       </TabsList>
 
                       <TabsContent value="expense" className="mt-4">
+                        {(() => {
+                          console.log('Rendering expense tab - showArchived:', showArchived);
+                          console.log('Rendering expense tab - expenseCategories:', expenseCategories);
+                          console.log('Rendering expense tab - expenseCategories.length:', expenseCategories.length);
+                          return null;
+                        })()}
                         {expenseCategories.length > 0 ? (
                           <SimpleCategoryTree
                             data={expenseCategories}
@@ -203,9 +257,14 @@ export default function CategoriesPage() {
                           />
                         ) : (
                           <div className="text-center py-8 text-muted-foreground">
-                            <div className="text-lg">No expense categories found</div>
+                            <div className="text-lg">
+                              {showArchived ? 'No archived expense categories found' : 'No expense categories found'}
+                            </div>
                             <div className="text-sm">
-                              Create your first expense category to start organizing your expenses
+                              {showArchived
+                                ? 'No expense categories have been archived yet'
+                                : 'Create your first expense category to start organizing your expenses'
+                              }
                             </div>
                           </div>
                         )}
@@ -224,9 +283,14 @@ export default function CategoriesPage() {
                           />
                         ) : (
                           <div className="text-center py-8 text-muted-foreground">
-                            <div className="text-lg">No income categories found</div>
+                            <div className="text-lg">
+                              {showArchived ? 'No archived income categories found' : 'No income categories found'}
+                            </div>
                             <div className="text-sm">
-                              Create your first income category to start organizing your incomes
+                              {showArchived
+                                ? 'No income categories have been archived yet'
+                                : 'Create your first income category to start organizing your incomes'
+                              }
                             </div>
                           </div>
                         )}

@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  IconArchiveOff,
   IconChevronDown,
   IconChevronRight,
   IconEdit,
@@ -40,10 +41,12 @@ interface SimpleCategoryTreeProps {
 }
 
 function buildTreeData(categories: CategoryFromTRPC[]): TreeNode[] {
+  console.log('SimpleCategoryTree - buildTreeData called with:', categories);
   const categoryMap = new Map<string, TreeNode>();
   const rootItems: TreeNode[] = [];
 
   for (const category of categories) {
+    console.log('Processing category:', category.name, 'parentId:', category.parentId, 'isArchived:', category.isArchived);
     const treeNode: TreeNode = {
       id: category.id,
       name: category.name,
@@ -68,10 +71,16 @@ function buildTreeData(categories: CategoryFromTRPC[]): TreeNode[] {
       if (parent) {
         parent.children = parent.children || [];
         parent.children.push(treeNode);
+      } else {
+        // If parent is not in the current dataset (e.g., parent is not archived but child is),
+        // treat this as a root item for archived categories
+        console.log('Parent not found for category:', category.name, 'parentId:', category.parentId);
+        rootItems.push(treeNode);
       }
     }
   }
 
+  console.log('SimpleCategoryTree - buildTreeData returning rootItems:', rootItems);
   return rootItems;
 }
 
@@ -160,9 +169,7 @@ function SimpleTreeNode({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{node.name}</span>
             {node.isArchived && (
-              <span className="text-xs text-muted-foreground italic">
-                (archived)
-              </span>
+              <span className="text-xs text-muted-foreground italic">(archived)</span>
             )}
           </div>
         </div>
@@ -211,7 +218,7 @@ function SimpleTreeNode({
               )}
               {node.isArchived && onUnarchive && (
                 <DropdownMenuItem onClick={handleUnarchive}>
-                  <IconEdit className="mr-2 h-4 w-4" />
+                  <IconArchiveOff className="mr-2 h-4 w-4" />
                   Restore
                 </DropdownMenuItem>
               )}
@@ -257,7 +264,9 @@ export function SimpleCategoryTree({
   onCreateSubcategory,
   getParentCategoryName,
 }: SimpleCategoryTreeProps) {
+  console.log('SimpleCategoryTree - component called with data:', data);
   const treeData = buildTreeData(data);
+  console.log('SimpleCategoryTree - treeData after buildTreeData:', treeData);
 
   return (
     <div className="w-full">

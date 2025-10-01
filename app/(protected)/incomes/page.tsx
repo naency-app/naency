@@ -39,7 +39,9 @@ export default function IncomesPage() {
     from: dateRange.from,
     to: dateRange.to,
   });
-  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery();
+  const { data: categoriesData, isLoading: categoriesLoading } = trpc.categories.getAll.useQuery({
+    includeArchived: true,
+  });
   const { data: accountsData, isLoading: accountsLoading } = trpc.accounts.getAll.useQuery(); // <-- unificado
   const utils = trpc.useUtils();
 
