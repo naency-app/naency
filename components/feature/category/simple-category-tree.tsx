@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  IconArchiveOff,
   IconChevronDown,
   IconChevronRight,
   IconEdit,
@@ -68,6 +69,10 @@ function buildTreeData(categories: CategoryFromTRPC[]): TreeNode[] {
       if (parent) {
         parent.children = parent.children || [];
         parent.children.push(treeNode);
+      } else {
+        // If parent is not in the current dataset (e.g., parent is not archived but child is),
+        // treat this as a root item for archived categories
+        rootItems.push(treeNode);
       }
     }
   }
@@ -160,9 +165,7 @@ function SimpleTreeNode({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{node.name}</span>
             {node.isArchived && (
-              <span className="text-xs text-muted-foreground italic">
-                (archived)
-              </span>
+              <span className="text-xs text-muted-foreground italic">(archived)</span>
             )}
           </div>
         </div>
@@ -211,7 +214,7 @@ function SimpleTreeNode({
               )}
               {node.isArchived && onUnarchive && (
                 <DropdownMenuItem onClick={handleUnarchive}>
-                  <IconEdit className="mr-2 h-4 w-4" />
+                  <IconArchiveOff className="mr-2 h-4 w-4" />
                   Restore
                 </DropdownMenuItem>
               )}

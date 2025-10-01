@@ -44,7 +44,10 @@ export default function CategoryCombobox({
   const [internalValue, setInternalValue] = useState<string | null>(null);
   const selected = value ?? internalValue;
 
-  const { data, isLoading } = trpc.categories.getHierarchical.useQuery({ flow });
+  const { data, isLoading } = trpc.categories.getHierarchical.useQuery({
+    flow,
+    includeArchived: false
+  });
 
   type Node = { id: string; name: string; color?: string | null; subcategories?: Node[] };
   const groups = data as Node[] | undefined;
