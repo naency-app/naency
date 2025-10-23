@@ -1,4 +1,4 @@
-# Tabler - Sistema de Gestão Financeira
+# Naency - Sistema de Gestão Financeira
 
 ## Funcionalidades
 
