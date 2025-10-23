@@ -1,10 +1,12 @@
 import { redirect } from 'next/navigation';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { AppSidebar } from '@/components/app-sidebar';
+import { DockApp } from '@/components/Docke';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { getServerSession } from '@/lib/get-server-session';
-import { DockApp } from '@/components/Docke';
+
+export const dynamic = 'force-dynamic';
 
 export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession();
